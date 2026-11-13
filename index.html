@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1e1b4b" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>EduLogística — Controle de Equipamentos</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#1e1b4b',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Suavização de rolagem e ajustes visuais finos */
+    html {
+      scroll-behavior: smooth;
+    }
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+      50% { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    }
+    .animate-urgent {
+      animation: pulse-border 2s infinite;
+    }
+    /* Custom scrollbar discreta */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- Barra de Notificação Flutuante (Toast / Alertas Internos) -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Banner de Alerta Urgente no Topo (exibido quando há atraso ou lembrete próximo) -->
+  <div id="urgent-banner" class="hidden bg-rose-600 text-white px-4 py-2.5 shadow-md transition-all">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-sm">
+      <div class="flex items-center gap-2 font-medium">
+        <i data-lucide="bell-ring" class="w-5 h-5 animate-bounce shrink-0"></i>
+        <span id="urgent-banner-text">Você tem compromissos próximos ou atrasados!</span>
+      </div>
+      <button onclick="dismissUrgentBanner()" class="text-xs bg-rose-700 hover:bg-rose-800 px-3 py-1 rounded-lg font-semibold transition">
+        Dispensar aviso
+      </button>
+    </div>
+  </div>
+
+  <!-- Cabeçalho Principal -->
+  <header class="bg-brand-900 text-white shadow-lg sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <!-- Logo e Título -->
+        <div class="flex items-center gap-3">
+          <div class="bg-indigo-500/20 border border-indigo-400/30 p-2.5 rounded-xl">
+            <i data-lucide="laptop-2" class="w-6 h-6 text-indigo-300"></i>
+          </div>
+          <div>
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight leading-tight flex items-center gap-2">
+              EduLogística
+              <span class="hidden sm:inline-block text-[11px] font-semibold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/20">
+                Tecnologia Educacional
+              </span>
+            </h1>
+            <p class="text-xs text-indigo-200 flex items-center gap-1.5 mt-0.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+              <span id="live-clock">Carregando relógio...</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Controles Rápidos (Som, Notificações, Configurações, Novo) -->
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <!-- Toggle Alerta Sonoro -->
+          <button id="btn-sound-toggle" onclick="toggleSound()" title="Ativar/Desativar Alerta Sonoro"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-white/10 hover:bg-white/20 transition border border-white/10">
+            <i id="icon-sound" data-lucide="volume-2" class="w-4 h-4 text-emerald-300"></i>
+            <span class="hidden md:inline" id="label-sound">Som Ativo</span>
+          </button>
+
+          <!-- Botão Notificações do Navegador -->
+          <button id="btn-notif-perm" onclick="requestNotificationPermission()" title="Ativar Notificações do Navegador"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-white/10 hover:bg-white/20 transition border border-white/10">
+            <i id="icon-notif" data-lucide="bell" class="w-4 h-4 text-amber-300"></i>
+            <span class="hidden md:inline" id="label-notif">Notificações</span>
+          </button>
+
+          <!-- Menu de Dados / Configurações -->
+          <button onclick="openSettingsModal()" title="Configurações e Backup"
+            class="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition border border-white/10 text-indigo-100">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Botão Principal: Lembrete -->
+          <button onclick="openBookingModal()"
+            class="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 active:scale-[0.98] text-white font-semibold px-4 py-2 rounded-xl shadow-md shadow-indigo-950/40 transition text-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Lembrete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Cards de Resumo Rápido (KPIs) -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" aria-label="Resumo do dia">
+      <!-- Total Hoje -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Hoje</p>
+          <p id="stat-total" class="text-2xl sm:text-3xl font-extrabold text-slate-800 mt-1">0</p>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <i data-lucide="calendar-days" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Para Entregar (Pendentes) -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-amber-600 uppercase tracking-wider">Para Entregar</p>
+          <p id="stat-pending" class="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1">0</p>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+          <i data-lucide="package-open" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Em Uso nas Salas -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-blue-600 uppercase tracking-wider">Em Uso / Recolher</p>
+          <p id="stat-inuse" class="text-2xl sm:text-3xl font-extrabold text-blue-600 mt-1">0</p>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <!-- Concluídos -->
+      <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium text-emerald-600 uppercase tracking-wider">Devolvidos</p>
+          <p id="stat-done" class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1">0</p>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- Card Destaque: Próximo Compromisso Imediato -->
+    <section id="next-action-wrapper" class="hidden">
+      <div id="next-action-card" class="bg-gradient-to-r from-brand-900 via-indigo-900 to-indigo-800 text-white rounded-2xl p-4 sm:p-5 shadow-md border border-indigo-700/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- Preenchido dinamicamente via JS -->
+      </div>
+    </section>
+
+    <!-- Barra de Filtros e Busca -->
+    <section class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-3">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <!-- Filtro de Data -->
+        <div class="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl w-full lg:w-auto">
+          <button onclick="setDateFilter('today')" data-date-filter="today"
+            class="date-filter-btn flex-1 lg:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition bg-white text-brand-900 shadow-sm">
+            Hoje
+          </button>
+          <button onclick="setDateFilter('tomorrow')" data-date-filter="tomorrow"
+            class="date-filter-btn flex-1 lg:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900">
+            Amanhã
+          </button>
+          <button onclick="setDateFilter('all')" data-date-filter="all"
+            class="date-filter-btn flex-1 lg:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900">
+            Todas as Datas
+          </button>
+        </div>
+
+        <!-- Filtro de Status -->
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="setStatusFilter('all')" data-status-filter="all"
+            class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-brand-900 text-white border-brand-900">
+            Todos
+          </button>
+          <button onclick="setStatusFilter('pending')" data-status-filter="pending"
+            class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50">
+            Pendentes
+          </button>
+          <button onclick="setStatusFilter('in_use')" data-status-filter="in_use"
+            class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50">
+            Em Uso
+          </button>
+          <button onclick="setStatusFilter('completed')" data-status-filter="completed"
+            class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50">
+            Concluídos
+          </button>
+        </div>
+      </div>
+
+      <!-- Campo de Busca -->
+      <div class="relative">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+        <input type="text" id="search-input" oninput="handleSearch(this.value)"
+          placeholder="Buscar por professor(a), turma (ex: 9º Ano B), equipamento ou sala..."
+          class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition" />
+        <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- Lista / Linha do Tempo de Agendamentos -->
+    <section aria-label="Linha do tempo de entregas e recolhimentos">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <i data-lucide="list-checks" class="w-5 h-5 text-indigo-600"></i>
+          <span id="timeline-heading">Agenda de Hoje</span>
+          <span id="visible-count" class="text-xs font-semibold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">0</span>
+        </h2>
+      </div>
+
+      <!-- Container dos Cards -->
+      <div id="bookings-list" class="space-y-3"></div>
+
+      <!-- Estado Vazio -->
+      <div id="empty-state" class="hidden bg-white rounded-2xl border border-dashed border-slate-300 p-8 sm:p-12 text-center">
+        <div class="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+          <i data-lucide="calendar-plus" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-base font-bold text-slate-800">Nenhum agendamento encontrado</h3>
+        <p class="text-sm text-slate-500 max-w-md mx-auto mt-1">
+          Cadastre uma nova entrega de equipamentos para os professores para começar a usar o painel.
+        </p>
+        <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
+          <button onclick="openBookingModal()"
+            class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Cadastrar Entrega
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <p>EduLogística — Assistente pessoal para entrega e recolhimento de equipamentos escolares.</p>
+      <p>Dados salvos localmente no seu navegador.</p>
+    </div>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: CADASTRO / EDIÇÃO DE AGENDAMENTO                               -->
+  <!-- ===================================================================== -->
+  <div id="booking-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden my-auto border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+      <!-- Cabeçalho do Modal -->
+      <div class="bg-brand-900 text-white px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="clipboard-edit" class="w-5 h-5 text-indigo-300"></i>
+          <h3 id="modal-title" class="text-base font-bold">Novo Lembrete de Equipamento</h3>
+        </div>
+        <button onclick="closeBookingModal()" class="p-1.5 rounded-lg hover:bg-white/10 transition text-indigo-200 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Formulário -->
+      <form id="booking-form" onsubmit="saveBooking(event)" class="p-5 space-y-4 max-h-[82vh] overflow-y-auto">
+        <input type="hidden" id="field-id" />
+
+        <!-- Professor e Turma -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label for="field-teacher" class="block text-xs font-semibold text-slate-700 mb-1">
+              Professor(a) <span class="text-rose-500">*</span>
+            </label>
+            <input type="text" id="field-teacher" list="teachers-datalist" required
+              placeholder="Ex: Prof.ª Mariana Silva"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            <datalist id="teachers-datalist"></datalist>
+          </div>
+
+          <div>
+            <label for="field-class" class="block text-xs font-semibold text-slate-700 mb-1">
+              Turma <span class="text-rose-500">*</span>
+            </label>
+            <input type="text" id="field-class" list="classes-datalist" required
+              placeholder="Ex: 8º Ano B"
+              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            <datalist id="classes-datalist"></datalist>
+          </div>
+        </div>
+
+        <!-- Seleção Rápida de Equipamentos -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            Equipamentos Solicitados <span class="text-rose-500">*</span>
+          </label>
+          <p class="text-[11px] text-slate-500 mb-2">Toque nos itens abaixo para adicionar ou ajuste a quantidade:</p>
+
+          <!-- Chips Rápidos -->
+          <div id="quick-equipment-chips" class="flex flex-wrap gap-1.5 mb-3">
+            <!-- Gerado via JS -->
+          </div>
+
+          <!-- Adicionar Item Personalizado -->
+          <div class="flex gap-2 mb-3">
+            <input type="text" id="custom-equip-name" placeholder="Outro equipamento (ex: Caixa de Som, Projetor)..."
+              class="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+            <button type="button" onclick="addCustomEquipment()"
+              class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl transition shrink-0">
+              + Adicionar
+            </button>
+          </div>
+
+          <!-- Lista de Equipamentos Selecionados com Quantidade -->
+          <div id="selected-equipments-list" class="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200 min-h-[52px]">
+            <p class="text-xs text-slate-400 text-center py-1">Nenhum equipamento selecionado ainda.</p>
+          </div>
+        </div>
+
+        <!-- Data e Horários -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="field-date" class="block text-xs font-semibold text-slate-700 mb-1">
+              Data <span class="text-rose-500">*</span>
+            </label>
+            <input type="date" id="field-date" required
+              class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+          </div>
+
+          <div>
+            <label for="field-delivery-time" class="block text-xs font-semibold text-slate-700 mb-1">
+              Horário Entrega <span class="text-rose-500">*</span>
+            </label>
+            <input type="time" id="field-delivery-time" onchange="suggestPickupTimeFromDelivery()" required
+              class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+          </div>
+
+          <div>
+            <label for="field-pickup-time" class="block text-xs font-semibold text-slate-700 mb-1">
+              Horário Recolhimento <span class="text-rose-500">*</span>
+            </label>
+            <input type="time" id="field-pickup-time" oninput="markPickupTimeManual()" required
+              class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+          </div>
+        </div>
+
+        <!-- Sala / Observações -->
+        <div>
+          <label for="field-notes" class="block text-xs font-semibold text-slate-700 mb-1">
+            Sala / Observações (Opcional)
+          </label>
+          <input type="text" id="field-notes"
+            placeholder="Ex: Sala 12 (2º andar) — Levar extensão elétrica e adaptador HDMI"
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white" />
+        </div>
+
+        <!-- Botões de Ação do Modal -->
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+          <button type="button" onclick="closeBookingModal()"
+            class="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+            Cancelar
+          </button>
+          <button type="submit"
+            class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition flex items-center gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            Salvar Lembrete
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: CONFIGURAÇÕES, LEMBRETES E BACKUP JSON                         -->
+  <!-- ===================================================================== -->
+  <div id="settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-200">
+      <div class="bg-brand-900 text-white px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-5 h-5 text-indigo-300"></i>
+          <h3 class="text-base font-bold">Configurações & Backup</h3>
+        </div>
+        <button onclick="closeSettingsModal()" class="p-1.5 rounded-lg hover:bg-white/10 transition text-indigo-200 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-5">
+        <div class="space-y-3 pt-1">
+          <div>
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Dados da escola</h4>
+            <p class="text-xs text-slate-500 mt-1">Um nome por linha. As alterações são salvas automaticamente neste navegador.</p>
+          </div>
+          <div>
+            <label for="setting-teachers" class="block text-xs font-semibold text-slate-700 mb-1">Professores</label>
+            <textarea id="setting-teachers" rows="3" oninput="updateSchoolData('teachers', this.value)" placeholder="Ex: Ana Beatriz Silva&#10;Carlos Eduardo Souza" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+          <div>
+            <label for="setting-classes" class="block text-xs font-semibold text-slate-700 mb-1">Turmas</label>
+            <textarea id="setting-classes" rows="3" oninput="updateSchoolData('classes', this.value)" placeholder="Ex: 6º Ano A&#10;7º Ano B" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+          <div>
+            <label for="setting-equipment" class="block text-xs font-semibold text-slate-700 mb-1">Equipamentos disponíveis</label>
+            <textarea id="setting-equipment" rows="3" oninput="updateSchoolData('equipment', this.value)" placeholder="Ex: Notebook&#10;Projetor" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+          <p id="school-data-save-status" class="text-[11px] text-emerald-700" aria-live="polite">Dados salvos neste navegador.</p>
+        </div>
+        <section class="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-3" aria-label="Dados cadastrados">
+          <div>
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Dados cadastrados</h4>
+            <p class="text-xs text-slate-500 mt-1">Consulte as listas e exclua um item individualmente quando necessário.</p>
+          </div>
+          <div id="school-data-list" class="space-y-3"></div>
+        </section>
+        <div class="border-t border-slate-200"></div>
+        <!-- Antecedência do Alerta -->
+        <div>
+          <label for="setting-lead-time" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Antecedência dos Lembretes
+          </label>
+          <p class="text-xs text-slate-500 mb-2">Avisar quantos minutos antes da entrega ou recolhimento?</p>
+          <select id="setting-lead-time" onchange="updateLeadTime(this.value)"
+            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="5">5 minutos antes</option>
+            <option value="10">10 minutos antes</option>
+            <option value="15">15 minutos antes (Recomendado)</option>
+            <option value="20">20 minutos antes</option>
+            <option value="30">30 minutos antes</option>
+          </select>
+        </div>
+
+        <!-- Testar Alerta Sonoro -->
+        <div class="flex items-center justify-between bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div>
+            <p class="text-sm font-semibold text-slate-800">Testar Som de Lembrete</p>
+            <p class="text-xs text-slate-500">Verifica o volume do alerta no aparelho</p>
+          </div>
+          <button type="button" onclick="playAlertChime(true)"
+            class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+            <i data-lucide="volume-2" class="w-4 h-4"></i>
+            Tocar Som
+          </button>
+        </div>
+
+        <!-- Backup e Restauração -->
+        <div class="space-y-2.5 pt-2 border-t border-slate-200">
+          <p class="text-xs font-bold text-slate-700 uppercase tracking-wider">Backup de Dados (JSON)</p>
+          <div class="grid grid-cols-2 gap-2.5">
+            <button type="button" onclick="exportJSON()"
+              class="flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              Exportar JSON
+            </button>
+            <label class="flex items-center justify-center gap-2 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-xl transition cursor-pointer">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              Importar JSON
+              <input type="file" accept=".json" onchange="importJSON(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+        <!-- Zona de Limpeza -->
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
+          <button type="button" onclick="confirmClearAllData()"
+            class="text-xs font-semibold text-rose-600 hover:text-rose-800 flex items-center gap-1.5">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            Apagar todos os registros
+          </button>
+          <button type="button" onclick="closeSettingsModal()"
+            class="px-4 py-2 bg-slate-800 text-white text-xs font-semibold rounded-xl hover:bg-slate-700 transition">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADO (SEM alert() OU confirm())         -->
+  <!-- ===================================================================== -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-slate-200">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 id="confirm-title" class="text-base font-bold text-slate-800">Confirmar ação</h4>
+          <p id="confirm-message" class="text-xs text-slate-600 mt-0.5">Tem certeza que deseja continuar?</p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-4">
+        <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+          Cancelar
+        </button>
+        <button id="confirm-yes-btn" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white transition">
+          Sim, confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // CONFIGURAÇÃO INICIAL E ESTADO DA APLICAÇÃO
+    // =========================================================================
+    const STORAGE_KEY = 'edulogistica_bookings_v1';
+    const SETTINGS_KEY = 'edulogistica_settings_v1';
+
+    // Catálogo padrão de equipamentos com ícones Lucide
+    const DEFAULT_EQUIPMENTS = [
+      { name: 'Notebook', icon: 'laptop' },
+      { name: 'Tablet', icon: 'tablet' },
+      { name: 'Óculos VR', icon: 'glasses' },
+      { name: 'Braço Robótico', icon: 'bot' },
+      { name: 'Fone de Ouvido', icon: 'headphones' },
+      { name: 'Projetor / Datashow', icon: 'projector' },
+      { name: 'Kit Robótica', icon: 'cpu' },
+      { name: 'Caixa de Som', icon: 'speaker' }
+    ];
+
+    let bookings = [];
+    let settings = {
+      soundEnabled: true,
+      leadTimeMinutes: 15,
+      notifiedEvents: {}, // Evita repetir o mesmo alerta a cada segundo
+      teachers: [],
+      classes: [],
+      equipment: [],
+      schoolCatalogsResetV1: false
+    };
+
+    // Estado dos filtros ativos
+    let currentDateFilter = 'today';
+    let currentStatusFilter = 'all';
+    let currentSearchQuery = '';
+    let modalSelectedEquipments = []; // [{ name: 'Notebook', qty: 10 }]
+    let pickupTimeManuallyEdited = false;
+    let bannerDismissedUntil = 0;
+
+    // =========================================================================
+    // UTILITÁRIOS DE DATA E HORA
+    // =========================================================================
+    function getTodayISO() {
+      const now = new Date();
+      const offset = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - offset).toISOString().split('T')[0];
+    }
+
+    function getTomorrowISO() {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const offset = tomorrow.getTimezoneOffset() * 60000;
+      return new Date(tomorrow.getTime() - offset).toISOString().split('T')[0];
+    }
+
+    function formatDateBR(isoDate) {
+      if (!isoDate) return '';
+      const [y, m, d] = isoDate.split('-');
+      const today = getTodayISO();
+      const tomorrow = getTomorrowISO();
+      if (isoDate === today) return `Hoje (${d}/${m})`;
+      if (isoDate === tomorrow) return `Amanhã (${d}/${m})`;
+      return `${d}/${m}/${y}`;
+    }
+
+    function parseDateTime(dateStr, timeStr) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return new Date(year, month - 1, day, hours, minutes, 0, 0);
+    }
+
+    function formatMinutesDiff(diffMs) {
+      const absMin = Math.round(Math.abs(diffMs) / 60000);
+      if (absMin < 1) return 'agora mesmo';
+      if (absMin < 60) return `${absMin} min`;
+      const hrs = Math.floor(absMin / 60);
+      const mins = absMin % 60;
+      return mins > 0 ? `${hrs}h ${mins}min` : `${hrs}h`;
+    }
+
+    // =========================================================================
+    // PERSISTÊNCIA (LOCALSTORAGE)
+    // =========================================================================
+    function loadState() {
+      let resetSchoolCatalogs = false;
+      try {
+        const savedBookings = localStorage.getItem(STORAGE_KEY);
+        if (savedBookings) {
+          bookings = JSON.parse(savedBookings);
+        }
+        const savedSettings = localStorage.getItem(SETTINGS_KEY);
+        if (savedSettings) {
+          settings = { ...settings, ...JSON.parse(savedSettings) };
+        }
+        if (!settings.schoolCatalogsResetV1) {
+          settings.teachers = [];
+          settings.classes = [];
+          settings.equipment = [];
+          settings.schoolCatalogsResetV1 = true;
+          resetSchoolCatalogs = true;
+        }
+      } catch (e) {
+        console.error('Erro ao carregar dados locais:', e);
+      }
+      normalizeSchoolCatalogs();
+      if (resetSchoolCatalogs) saveState();
+    }
+
+    function normalizeSchoolCatalogs() {
+      ['teachers', 'classes', 'equipment'].forEach(key => {
+        const values = Array.isArray(settings[key]) ? settings[key] : [];
+        settings[key] = [...new Map(values.map(value => String(value).trim()).filter(Boolean).map(value => [value.toLocaleLowerCase('pt-BR'), value])).values()];
+      });
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      } catch (e) {
+        showToast('Erro ao salvar no navegador. Verifique o espaço disponível.', 'error');
+      }
+    }
+
+    // =========================================================================
+    // ÁUDIO SINTÉTICO (WEB AUDIO API - SEM ARQUIVOS EXTERNOS)
+    // =========================================================================
+    function playAlertChime(force = false) {
+      if (!settings.soundEnabled && !force) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const now = ctx.currentTime;
+
+        // Sequência melódica suave de 3 notas (C5 -> E5 -> G5)
+        const notes = [523.25, 659.25, 783.99];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.14);
+
+          gain.gain.setValueAtTime(0.001, now + idx * 0.14);
+          gain.gain.exponentialRampToValueAtTime(0.18, now + idx * 0.14 + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.14 + 0.45);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + idx * 0.14);
+          osc.stop(now + idx * 0.14 + 0.48);
+        });
+      } catch (err) {
+        console.warn('Áudio bloqueado antes de interação do usuário:', err);
+      }
+    }
+
+    function toggleSound() {
+      settings.soundEnabled = !settings.soundEnabled;
+      saveState();
+      updateHeaderControls();
+      if (settings.soundEnabled) {
+        playAlertChime(true);
+        showToast('Alertas sonoros ativados.', 'success');
+      } else {
+        showToast('Alertas sonoros silenciados.', 'info');
+      }
+    }
+
+    // =========================================================================
+    // NOTIFICAÇÕES DO NAVEGADOR (NOTIFICATION API)
+    // =========================================================================
+    function requestNotificationPermission() {
+      if (!('Notification' in window)) {
+        showToast('Seu navegador não suporta notificações de sistema.', 'warning');
+        return;
+      }
+      if (Notification.permission === 'granted') {
+        new Notification('EduLogística', {
+          body: 'As notificações já estão ativas neste dispositivo!'
+        });
+        updateHeaderControls();
+        return;
+      }
+      Notification.requestPermission().then((perm) => {
+        updateHeaderControls();
+        if (perm === 'granted') {
+          showToast('Notificações do navegador ativadas!', 'success');
+          new Notification('EduLogística Ativado', {
+            body: 'Você será avisado antes das entregas e recolhimentos.'
+          });
+        } else {
+          showToast('Permissão de notificação negada no navegador.', 'warning');
+        }
+      });
+    }
+
+    function sendBrowserNotification(title, body) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification(title, { body });
+        } catch (e) {
+          console.warn('Falha ao disparar Notification:', e);
+        }
+      }
+    }
+
+    function updateHeaderControls() {
+      const iconSound = document.getElementById('icon-sound');
+      const labelSound = document.getElementById('label-sound');
+      if (settings.soundEnabled) {
+        iconSound.setAttribute('data-lucide', 'volume-2');
+        iconSound.className = 'w-4 h-4 text-emerald-300';
+        labelSound.textContent = 'Som Ativo';
+      } else {
+        iconSound.setAttribute('data-lucide', 'volume-x');
+        iconSound.className = 'w-4 h-4 text-slate-400';
+        labelSound.textContent = 'Mudo';
+      }
+
+      const iconNotif = document.getElementById('icon-notif');
+      const labelNotif = document.getElementById('label-notif');
+      if ('Notification' in window && Notification.permission === 'granted') {
+        iconNotif.setAttribute('data-lucide', 'bell-ring');
+        iconNotif.className = 'w-4 h-4 text-emerald-300';
+        labelNotif.textContent = 'Notif. Ativas';
+      } else {
+        iconNotif.setAttribute('data-lucide', 'bell');
+        iconNotif.className = 'w-4 h-4 text-amber-300';
+        labelNotif.textContent = 'Ativar Avisos';
+      }
+
+      document.getElementById('setting-lead-time').value = String(settings.leadTimeMinutes);
+      lucide.createIcons();
+    }
+
+    // =========================================================================
+    // MOTOR DE TEMPO REAL, RELÓGIO E MONITORAMENTO DE LEMBRETES
+    // =========================================================================
+    function updateClockAndMonitor() {
+      const now = new Date();
+      const clockEl = document.getElementById('live-clock');
+      if (clockEl) {
+        const formatted = now.toLocaleDateString('pt-BR', {
+          weekday: 'short',
+          day: '2-digit',
+          month: 'short'
+        }) + ' • ' + now.toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        clockEl.textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+      }
+
+      checkRemindersAndUrgencies(now);
+      renderAll();
+    }
+
+    function checkRemindersAndUrgencies(now) {
+      const leadMs = settings.leadTimeMinutes * 60 * 1000;
+      let urgentMessages = [];
+      let triggerSound = false;
+
+      bookings.forEach((b) => {
+        if (b.status === 'completed') return;
+
+        const targetTime = b.status === 'pending'
+          ? parseDateTime(b.date, b.deliveryTime)
+          : parseDateTime(b.date, b.pickupTime);
+
+        const diffMs = targetTime.getTime() - now.getTime();
+        const actionLabel = b.status === 'pending' ? 'Entrega' : 'Recolhimento';
+        const timeStr = b.status === 'pending' ? b.deliveryTime : b.pickupTime;
+
+        // 1. Atrasado (passou do horário)
+        if (diffMs < 0) {
+          urgentMessages.push(`${actionLabel} ATRASADA: ${b.teacher} (${b.className}) às ${timeStr}`);
+          const eventKey = `${b.id}_${b.status}_overdue`;
+          if (!settings.notifiedEvents[eventKey]) {
+            settings.notifiedEvents[eventKey] = true;
+            triggerSound = true;
+            saveState();
+            showToast(`Atraso: ${actionLabel} para ${b.teacher} (${b.className})!`, 'error');
+            sendBrowserNotification(
+              `⚠️ ${actionLabel} Atrasada!`,
+              `${b.teacher} • Turma ${b.className} (previsto ${timeStr})`
+            );
+          }
+        }
+        // 2. Próximo (dentro da janela de antecedência configurada)
+        else if (diffMs <= leadMs) {
+          const minsLeft = Math.ceil(diffMs / 60000);
+          urgentMessages.push(`${actionLabel} em ${minsLeft} min: ${b.teacher} (${b.className}) às ${timeStr}`);
+          const eventKey = `${b.id}_${b.status}_upcoming`;
+          if (!settings.notifiedEvents[eventKey]) {
+            settings.notifiedEvents[eventKey] = true;
+            triggerSound = true;
+            saveState();
+            showToast(`Lembrete (${minsLeft} min): ${actionLabel} — ${b.teacher} (${b.className})`, 'warning');
+            sendBrowserNotification(
+              `⏰ Lembrete de ${actionLabel} (${minsLeft} min)`,
+              `${b.teacher} • Turma ${b.className} às ${timeStr}`
+            );
+          }
+        }
+      });
+
+      if (triggerSound) {
+        playAlertChime();
+      }
+
+      const banner = document.getElementById('urgent-banner');
+      const bannerText = document.getElementById('urgent-banner-text');
+      if (urgentMessages.length > 0 && Date.now() > bannerDismissedUntil) {
+        bannerText.textContent = urgentMessages[0] + (urgentMessages.length > 1 ? ` (+${urgentMessages.length - 1} aviso(s))` : '');
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function dismissUrgentBanner() {
+      // Silencia o banner superior por 5 minutos
+      bannerDismissedUntil = Date.now() + 5 * 60 * 1000;
+      document.getElementById('urgent-banner').classList.add('hidden');
+    }
+
+    // =========================================================================
+    // RENDERIZAÇÃO DO PAINEL, KPIs, PRÓXIMO COMPROMISSO E LISTA
+    // =========================================================================
+    function renderAll() {
+      const now = new Date();
+      const todayISO = getTodayISO();
+
+      // 1. Atualizar KPIs (referentes a Hoje)
+      const todayBookings = bookings.filter(b => b.date === todayISO);
+      document.getElementById('stat-total').textContent = todayBookings.length;
+      document.getElementById('stat-pending').textContent = todayBookings.filter(b => b.status === 'pending').length;
+      document.getElementById('stat-inuse').textContent = todayBookings.filter(b => b.status === 'in_use').length;
+      document.getElementById('stat-done').textContent = todayBookings.filter(b => b.status === 'completed').length;
+
+      // 2. Destaque: Próximo Compromisso Imediato (qualquer data ativa, priorizando atrasados/hoje)
+      renderNextActionCard(now);
+
+      // 3. Filtrar lista principal
+      const tomorrowISO = getTomorrowISO();
+      let filtered = bookings.filter((b) => {
+        if (currentDateFilter === 'today' && b.date !== todayISO) return false;
+        if (currentDateFilter === 'tomorrow' && b.date !== tomorrowISO) return false;
+        if (currentStatusFilter !== 'all' && b.status !== currentStatusFilter) return false;
+
+        if (currentSearchQuery.trim() !== '') {
+          const q = currentSearchQuery.toLowerCase();
+          const equipStr = b.equipments.map(e => e.name).join(' ').toLowerCase();
+          const match =
+            b.teacher.toLowerCase().includes(q) ||
+            b.className.toLowerCase().includes(q) ||
+            equipStr.includes(q) ||
+            (b.notes && b.notes.toLowerCase().includes(q));
+          if (!match) return false;
+        }
+        return true;
+      });
+
+      // Ordenação inteligente:
+      // Ativos (pending / in_use) ordenados pelo próximo horário relevante; Concluídos vão para o final
+      filtered.sort((a, b) => {
+        if (a.status === 'completed' && b.status !== 'completed') return 1;
+        if (a.status !== 'completed' && b.status === 'completed') return -1;
+
+        const timeA = a.status === 'pending' ? `${a.date}T${a.deliveryTime}` : `${a.date}T${a.pickupTime}`;
+        const timeB = b.status === 'pending' ? `${b.date}T${b.deliveryTime}` : `${b.date}T${b.pickupTime}`;
+        return timeA.localeCompare(timeB);
+      });
+
+      // Título da seção
+      const headingMap = {
+        today: 'Linha do Tempo de Hoje',
+        tomorrow: 'Agendamentos de Amanhã',
+        all: 'Todos os Agendamentos'
+      };
+      document.getElementById('timeline-heading').textContent = headingMap[currentDateFilter];
+      document.getElementById('visible-count').textContent = filtered.length;
+
+      const listEl = document.getElementById('bookings-list');
+      const emptyEl = document.getElementById('empty-state');
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+      } else {
+        emptyEl.classList.add('hidden');
+        listEl.innerHTML = filtered.map(b => createBookingCardHTML(b, now)).join('');
+      }
+
+      lucide.createIcons();
+    }
+
+    function renderNextActionCard(now) {
+      const wrapper = document.getElementById('next-action-wrapper');
+      const card = document.getElementById('next-action-card');
+
+      const activeBookings = bookings.filter(b => b.status !== 'completed');
+      if (activeBookings.length === 0) {
+        wrapper.classList.add('hidden');
+        return;
+      }
+
+      // Encontra o compromisso ativo mais urgente/próximo
+      activeBookings.sort((a, b) => {
+        const dtA = a.status === 'pending' ? parseDateTime(a.date, a.deliveryTime) : parseDateTime(a.date, a.pickupTime);
+        const dtB = b.status === 'pending' ? parseDateTime(b.date, b.deliveryTime) : parseDateTime(b.date, b.pickupTime);
+        return dtA - dtB;
+      });
+
+      const next = activeBookings[0];
+      const isPending = next.status === 'pending';
+      const targetTimeStr = isPending ? next.deliveryTime : next.pickupTime;
+      const targetDate = parseDateTime(next.date, targetTimeStr);
+      const diffMs = targetDate.getTime() - now.getTime();
+      const isOverdue = diffMs < 0;
+
+      const badgeText = isPending ? 'PRÓXIMA ENTREGA' : 'PRÓXIMO RECOLHIMENTO';
+      const timeStatusText = isOverdue
+        ? `Atrasado há ${formatMinutesDiff(diffMs)}`
+        : `Em ${formatMinutesDiff(diffMs)}`;
+
+      const equipSummary = next.equipments.map(e => `${e.qty}x ${e.name}`).join(', ');
+
+      card.innerHTML = `
+        <div class="space-y-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${isOverdue ? 'bg-rose-500 text-white' : 'bg-amber-400 text-slate-900'}">
+              ${badgeText}
+            </span>
+            <span class="text-xs font-semibold text-indigo-200 flex items-center gap-1">
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+              ${formatDateBR(next.date)} às <strong class="text-white text-sm">${targetTimeStr}</strong> (${timeStatusText})
+            </span>
+          </div>
+          <h3 class="text-lg sm:text-xl font-bold text-white">
+            ${escapeHTML(next.teacher)} <span class="text-indigo-300 font-medium">• ${escapeHTML(next.className)}</span>
+          </h3>
+          <p class="text-xs sm:text-sm text-indigo-100 flex items-center gap-1.5">
+            <i data-lucide="package" class="w-4 h-4 text-indigo-300 shrink-0"></i>
+            <span>${escapeHTML(equipSummary)}${next.notes ? ` — <em class="text-indigo-200">${escapeHTML(next.notes)}</em>` : ''}</span>
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          ${isPending ? `
+            <button onclick="advanceStatus('${next.id}', 'in_use')"
+              class="w-full sm:w-auto px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4"></i>
+              Confirmar Entrega
+            </button>
+          ` : `
+            <button onclick="advanceStatus('${next.id}', 'completed')"
+              class="w-full sm:w-auto px-4 py-2.5 bg-sky-400 hover:bg-sky-300 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2">
+              <i data-lucide="archive" class="w-4 h-4"></i>
+              Confirmar Recolhimento
+            </button>
+          `}
+        </div>
+      `;
+
+      wrapper.classList.remove('hidden');
+    }
+
+    function createBookingCardHTML(b, now) {
+      const isPending = b.status === 'pending';
+      const isInUse = b.status === 'in_use';
+      const isCompleted = b.status === 'completed';
+
+      const targetTimeStr = isPending ? b.deliveryTime : b.pickupTime;
+      const targetDate = parseDateTime(b.date, targetTimeStr);
+      const diffMs = targetDate.getTime() - now.getTime();
+      const leadMs = settings.leadTimeMinutes * 60 * 1000;
+
+      const isOverdue = !isCompleted && diffMs < 0;
+      const isDueSoon = !isCompleted && !isOverdue && diffMs <= leadMs;
+
+      // Estilos visuais semânticos por status
+      let borderClass = 'border-slate-200/90';
+      let leftStripeClass = 'bg-slate-300';
+      let statusBadgeHTML = '';
+
+      if (isCompleted) {
+        borderClass = 'border-slate-200 opacity-75';
+        leftStripeClass = 'bg-emerald-500';
+        statusBadgeHTML = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Devolvido
+          </span>`;
+      } else if (isOverdue) {
+        borderClass = 'border-rose-400 animate-urgent';
+        leftStripeClass = 'bg-rose-600';
+        statusBadgeHTML = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700 border border-rose-300">
+            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+            ${isPending ? 'Entrega Atrasada' : 'Recolhimento Atrasado'} (${formatMinutesDiff(diffMs)})
+          </span>`;
+      } else if (isDueSoon) {
+        borderClass = 'border-amber-400 ring-2 ring-amber-400/20';
+        leftStripeClass = 'bg-amber-500';
+        statusBadgeHTML = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+            <i data-lucide="alarm-clock" class="w-3.5 h-3.5"></i>
+            ${isPending ? 'Entregar' : 'Recolher'} em ${formatMinutesDiff(diffMs)}
+          </span>`;
+      } else if (isPending) {
+        leftStripeClass = 'bg-amber-400';
+        statusBadgeHTML = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i> Aguardando Entrega (em ${formatMinutesDiff(diffMs)})
+          </span>`;
+      } else if (isInUse) {
+        leftStripeClass = 'bg-blue-500';
+        statusBadgeHTML = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            <i data-lucide="play-circle" class="w-3.5 h-3.5"></i> Em Uso • Recolher em ${formatMinutesDiff(diffMs)}
+          </span>`;
+      }
+
+      // Badges dos equipamentos
+      const equipmentsHTML = b.equipments.map(eq => {
+        const iconName = getEquipmentIcon(eq.name);
+        return `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200/80">
+            <i data-lucide="${iconName}" class="w-3.5 h-3.5 text-indigo-600"></i>
+            <strong class="font-bold text-indigo-700">${eq.qty}x</strong> ${escapeHTML(eq.name)}
+          </span>
+        `;
+      }).join('');
+
+      return `
+        <article class="bg-white rounded-2xl border ${borderClass} shadow-sm overflow-hidden transition hover:shadow-md flex">
+          <!-- Faixa lateral indicadora -->
+          <div class="w-1.5 sm:w-2 ${leftStripeClass} shrink-0"></div>
+
+          <div class="flex-1 p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <!-- Coluna 1: Horários e Status -->
+            <div class="space-y-2 flex-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                  ${formatDateBR(b.date)}
+                </span>
+
+                <div class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold bg-indigo-50 text-brand-900 px-3 py-1 rounded-lg border border-indigo-100">
+                  <span class="${isPending ? 'text-indigo-700 underline decoration-2' : 'text-slate-500'}">
+                    Entrega: ${b.deliveryTime}
+                  </span>
+                  <span class="text-slate-300">→</span>
+                  <span class="${isInUse ? 'text-blue-700 underline decoration-2' : 'text-slate-600'}">
+                    Recolher: ${b.pickupTime}
+                  </span>
+                </div>
+
+                ${statusBadgeHTML}
+              </div>
+
+              <!-- Professor e Turma -->
+              <div>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900 flex flex-wrap items-center gap-2">
+                  <span>${escapeHTML(b.teacher)}</span>
+                  <span class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-brand-900 text-white">
+                    ${escapeHTML(b.className)}
+                  </span>
+                </h3>
+                ${b.notes ? `
+                  <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+                    <span>${escapeHTML(b.notes)}</span>
+                  </p>
+                ` : ''}
+              </div>
+
+              <!-- Chips de Equipamentos -->
+              <div class="flex flex-wrap gap-1.5 pt-1">
+                ${equipmentsHTML}
+              </div>
+            </div>
+
+            <!-- Coluna 2: Botões de Ação Rápida -->
+            <div class="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100 shrink-0">
+              ${isPending ? `
+                <button onclick="advanceStatus('${b.id}', 'in_use')"
+                  class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition">
+                  <i data-lucide="hand-helping" class="w-4 h-4"></i>
+                  Entregue ao Professor
+                </button>
+                <button onclick="confirmCancelReminder('${b.id}')"
+                  class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition">
+                  <i data-lucide="ban" class="w-4 h-4"></i>
+                  Cancelar Lembrete
+                </button>
+              ` : ''}
+
+              ${isInUse ? `
+                <button onclick="advanceStatus('${b.id}', 'completed')"
+                  class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition">
+                  <i data-lucide="check-check" class="w-4 h-4"></i>
+                  Recolhido / Concluído
+                </button>
+              ` : ''}
+
+              ${isCompleted ? `
+                <button onclick="advanceStatus('${b.id}', 'in_use')" title="Reabrir agendamento"
+                  class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 transition">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                  Reabrir
+                </button>
+              ` : ''}
+
+              <!-- Editar e Excluir -->
+              <button onclick="editBooking('${b.id}')" title="Editar agendamento"
+                class="p-2.5 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 transition">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+              </button>
+              <button onclick="confirmDeleteBooking('${b.id}')" title="Excluir agendamento"
+                class="p-2.5 rounded-xl text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function getEquipmentIcon(name) {
+      const lower = name.toLowerCase();
+      if (lower.includes('notebook') || lower.includes('laptop') || lower.includes('chromebook')) return 'laptop';
+      if (lower.includes('tablet') || lower.includes('ipad')) return 'tablet';
+      if (lower.includes('vr') || lower.includes('óculos') || lower.includes('oculos')) return 'glasses';
+      if (lower.includes('braço') || lower.includes('robô') || lower.includes('robo')) return 'bot';
+      if (lower.includes('fone') || lower.includes('headset')) return 'headphones';
+      if (lower.includes('projetor') || lower.includes('datashow')) return 'projector';
+      if (lower.includes('som') || lower.includes('caixa')) return 'speaker';
+      return 'cpu';
+    }
+
+    // =========================================================================
+    // AÇÕES DE STATUS, FILTROS E BUSCA
+    // =========================================================================
+    function advanceStatus(id, newStatus) {
+      const idx = bookings.findIndex(b => b.id === id);
+      if (idx === -1) return;
+      bookings[idx].status = newStatus;
+      saveState();
+      renderAll();
+
+      if (newStatus === 'in_use') {
+        showToast(`Equipamento entregue para ${bookings[idx].teacher}. Lembrete de recolhimento ativo!`, 'success');
+      } else if (newStatus === 'completed') {
+        showToast(`Devolução de ${bookings[idx].teacher} concluída!`, 'success');
+      }
+    }
+
+    function setDateFilter(filter) {
+      currentDateFilter = filter;
+      document.querySelectorAll('.date-filter-btn').forEach(btn => {
+        if (btn.dataset.dateFilter === filter) {
+          btn.className = 'date-filter-btn flex-1 lg:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition bg-white text-brand-900 shadow-sm';
+        } else {
+          btn.className = 'date-filter-btn flex-1 lg:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition text-slate-600 hover:text-slate-900';
+        }
+      });
+      renderAll();
+    }
+
+    function setStatusFilter(filter) {
+      currentStatusFilter = filter;
+      document.querySelectorAll('.status-filter-btn').forEach(btn => {
+        if (btn.dataset.statusFilter === filter) {
+          btn.className = 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-brand-900 text-white border-brand-900';
+        } else {
+          btn.className = 'status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50';
+        }
+      });
+      renderAll();
+    }
+
+    function handleSearch(val) {
+      currentSearchQuery = val;
+      const clearBtn = document.getElementById('clear-search-btn');
+      if (val.trim().length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+      renderAll();
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      handleSearch('');
+    }
+
+    // =========================================================================
+    // MODAL DE CADASTRO / EDIÇÃO DE AGENDAMENTOS
+    // =========================================================================
+    function openBookingModal(bookingToEdit = null) {
+      populateTeacherDatalist();
+      renderQuickEquipmentChips();
+
+      const modal = document.getElementById('booking-modal');
+      const titleEl = document.getElementById('modal-title');
+
+      if (bookingToEdit) {
+        pickupTimeManuallyEdited = true;
+        titleEl.textContent = 'Editar Agendamento';
+        document.getElementById('field-id').value = bookingToEdit.id;
+        document.getElementById('field-teacher').value = bookingToEdit.teacher;
+        document.getElementById('field-class').value = bookingToEdit.className;
+        document.getElementById('field-date').value = bookingToEdit.date;
+        document.getElementById('field-delivery-time').value = bookingToEdit.deliveryTime;
+        document.getElementById('field-pickup-time').value = bookingToEdit.pickupTime;
+        document.getElementById('field-notes').value = bookingToEdit.notes || '';
+        modalSelectedEquipments = JSON.parse(JSON.stringify(bookingToEdit.equipments));
+      } else {
+        pickupTimeManuallyEdited = false;
+        titleEl.textContent = 'Novo Lembrete de Equipamento';
+        document.getElementById('booking-form').reset();
+        document.getElementById('field-id').value = '';
+        document.getElementById('field-date').value = getTodayISO();
+
+        // Sugere horário próximo arredondado
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 10);
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('field-delivery-time').value = `${hh}:${mm}`;
+
+        suggestPickupTimeFromDelivery();
+
+        modalSelectedEquipments = [];
+      }
+
+      renderSelectedEquipmentsList();
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeBookingModal() {
+      const modal = document.getElementById('booking-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function suggestPickupTimeFromDelivery() {
+      if (pickupTimeManuallyEdited) return;
+      const deliveryTime = document.getElementById('field-delivery-time').value;
+      if (!deliveryTime) return;
+      const [hours, minutes] = deliveryTime.split(':').map(Number);
+      const pickup = new Date();
+      pickup.setHours(hours, minutes + 50, 0, 0);
+      document.getElementById('field-pickup-time').value = `${String(pickup.getHours()).padStart(2, '0')}:${String(pickup.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function markPickupTimeManual() {
+      pickupTimeManuallyEdited = true;
+    }
+
+    function editBooking(id) {
+      const booking = bookings.find(b => b.id === id);
+      if (booking) openBookingModal(booking);
+    }
+
+    function populateTeacherDatalist() {
+      const datalist = document.getElementById('teachers-datalist');
+      const uniqueTeachers = [...new Set(bookings.map(b => b.teacher))];
+      const merged = [...new Set([...(settings.teachers || []), ...uniqueTeachers])];
+      datalist.innerHTML = merged.map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
+    }
+
+    function populateClassDatalist() {
+      const datalist = document.getElementById('classes-datalist');
+      datalist.innerHTML = (settings.classes || []).map(name => `<option value="${escapeHTML(name)}"></option>`).join('');
+    }
+
+    function renderQuickEquipmentChips() {
+      const container = document.getElementById('quick-equipment-chips');
+      const equipment = settings.equipment || [];
+      container.innerHTML = equipment.map(name => `
+        <button type="button" data-equipment-name="${escapeHTML(name)}"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 transition active:scale-95">
+          <i data-lucide="${getEquipmentIcon(name)}" class="w-3.5 h-3.5 text-indigo-600"></i>
+          + ${escapeHTML(name)}
+        </button>
+      `).join('');
+      container.querySelectorAll('[data-equipment-name]').forEach(button => {
+        button.addEventListener('click', () => toggleQuickEquipment(button.dataset.equipmentName));
+      });
+      lucide.createIcons();
+    }
+
+    function populateSchoolDataFields() {
+      document.getElementById('setting-teachers').value = (settings.teachers || []).join('\n');
+      document.getElementById('setting-classes').value = (settings.classes || []).join('\n');
+      document.getElementById('setting-equipment').value = (settings.equipment || []).join('\n');
+      renderSchoolDataList();
+      const leadTime = document.getElementById('setting-lead-time');
+      if ([...leadTime.options].some(option => option.value === String(settings.leadTimeMinutes))) {
+        leadTime.value = String(settings.leadTimeMinutes);
+      }
+    }
+
+    function updateSchoolData(category, value) {
+      const settingKey = { teachers: 'teachers', classes: 'classes', equipment: 'equipment' }[category];
+      if (!settingKey) return;
+      const entries = value.split(/\r?\n/).map(item => item.trim()).filter(Boolean);
+      settings[settingKey] = [...new Map(entries.map(item => [item.toLocaleLowerCase('pt-BR'), item])).values()];
+      saveState();
+
+      const status = document.getElementById('school-data-save-status');
+      try {
+        const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+        const storedEntries = saved[settingKey] || [];
+        const didSave = JSON.stringify(storedEntries) === JSON.stringify(settings[settingKey]);
+        status.textContent = didSave ? 'Alterações salvas automaticamente neste navegador.' : 'Não foi possível salvar. Verifique o espaço disponível.';
+        status.className = `text-[11px] ${didSave ? 'text-emerald-700' : 'text-rose-600'}`;
+      } catch (e) {
+        status.textContent = 'Não foi possível salvar neste navegador.';
+        status.className = 'text-[11px] text-rose-600';
+      }
+
+      populateTeacherDatalist();
+      populateClassDatalist();
+      renderQuickEquipmentChips();
+      renderSchoolDataList();
+    }
+
+    function renderSchoolDataList() {
+      const container = document.getElementById('school-data-list');
+      if (!container) return;
+      const groups = [
+        { key: 'teachers', label: 'Professores' },
+        { key: 'classes', label: 'Turmas' },
+        { key: 'equipment', label: 'Equipamentos' }
+      ];
+
+      container.innerHTML = groups.map(group => {
+        const items = settings[group.key] || [];
+        const entries = items.length
+          ? items.map((name, index) => `
+              <li class="flex items-center justify-between gap-2 bg-white px-2.5 py-2 rounded-lg border border-slate-200">
+                <span class="text-xs text-slate-700 break-words">${escapeHTML(name)}</span>
+                <button type="button" data-delete-category="${group.key}" data-delete-index="${index}" aria-label="Excluir ${escapeHTML(name)} de ${group.label}" title="Excluir item" class="shrink-0 p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </li>
+            `).join('')
+          : '<li class="text-xs text-slate-400 italic">Nenhum item cadastrado.</li>';
+        return `<div><h5 class="text-[11px] font-bold text-slate-600 mb-1.5">${group.label} (${items.length})</h5><ul class="space-y-1.5">${entries}</ul></div>`;
+      }).join('');
+
+      container.querySelectorAll('[data-delete-category]').forEach(button => {
+        button.addEventListener('click', () => removeSchoolData(button.dataset.deleteCategory, Number(button.dataset.deleteIndex)));
+      });
+      lucide.createIcons();
+    }
+
+    function removeSchoolData(category, index) {
+      if (!['teachers', 'classes', 'equipment'].includes(category)) return;
+      const values = settings[category];
+      if (!Array.isArray(values) || index < 0 || index >= values.length) return;
+      values.splice(index, 1);
+      const fieldId = { teachers: 'setting-teachers', classes: 'setting-classes', equipment: 'setting-equipment' }[category];
+      document.getElementById(fieldId).value = values.join('\n');
+      saveState();
+      populateTeacherDatalist();
+      populateClassDatalist();
+      renderQuickEquipmentChips();
+      renderSchoolDataList();
+    }
+
+    function toggleQuickEquipment(name) {
+      const existing = modalSelectedEquipments.find(item => item.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        modalSelectedEquipments.push({ name, qty: 1 });
+      }
+      renderSelectedEquipmentsList();
+    }
+
+    function addCustomEquipment() {
+      const input = document.getElementById('custom-equip-name');
+      const val = input.value.trim();
+      if (!val) return;
+      toggleQuickEquipment(val);
+      input.value = '';
+    }
+
+    function updateEquipmentQty(index, delta) {
+      if (!modalSelectedEquipments[index]) return;
+      modalSelectedEquipments[index].qty += delta;
+      if (modalSelectedEquipments[index].qty <= 0) {
+        modalSelectedEquipments.splice(index, 1);
+      }
+      renderSelectedEquipmentsList();
+    }
+
+    function setEquipmentQtyDirect(index, val) {
+      const num = parseInt(val, 10);
+      if (isNaN(num) || num <= 0) {
+        modalSelectedEquipments.splice(index, 1);
+      } else {
+        modalSelectedEquipments[index].qty = num;
+      }
+      renderSelectedEquipmentsList();
+    }
+
+    function renderSelectedEquipmentsList() {
+      const container = document.getElementById('selected-equipments-list');
+      if (modalSelectedEquipments.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-1.5">Toque nos botões acima para adicionar equipamentos.</p>`;
+        return;
+      }
+
+      container.innerHTML = modalSelectedEquipments.map((item, idx) => `
+        <div class="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-2xs">
+          <div class="flex items-center gap-2">
+            <i data-lucide="${getEquipmentIcon(item.name)}" class="w-4 h-4 text-indigo-600"></i>
+            <span class="text-xs font-semibold text-slate-800">${escapeHTML(item.name)}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="updateEquipmentQty(${idx}, -1)"
+              class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm flex items-center justify-center">
+              -
+            </button>
+            <input type="number" min="1" max="99" value="${item.qty}"
+              onchange="setEquipmentQtyDirect(${idx}, this.value)"
+              class="w-12 text-center text-xs font-bold border border-slate-200 rounded-lg py-1" />
+            <button type="button" onclick="updateEquipmentQty(${idx}, 1)"
+              class="w-7 h-7 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold text-sm flex items-center justify-center">
+              +
+            </button>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function saveBooking(event) {
+      event.preventDefault();
+
+      if (modalSelectedEquipments.length === 0) {
+        showToast('Selecione pelo menos um equipamento antes de salvar.', 'warning');
+        return;
+      }
+
+      const id = document.getElementById('field-id').value;
+      const teacher = document.getElementById('field-teacher').value.trim();
+      const className = document.getElementById('field-class').value.trim();
+      const date = document.getElementById('field-date').value;
+      const deliveryTime = document.getElementById('field-delivery-time').value;
+      const pickupTime = document.getElementById('field-pickup-time').value;
+      const notes = document.getElementById('field-notes').value.trim();
+
+      if (pickupTime <= deliveryTime) {
+        showToast('O horário de recolhimento deve ser posterior ao de entrega.', 'warning');
+        return;
+      }
+
+      if (id) {
+        const idx = bookings.findIndex(b => b.id === id);
+        if (idx !== -1) {
+          bookings[idx] = {
+            ...bookings[idx],
+            teacher,
+            className,
+            date,
+            deliveryTime,
+            pickupTime,
+            notes,
+            equipments: modalSelectedEquipments
+          };
+          // Limpa flags de notificação caso o horário tenha sido alterado
+          delete settings.notifiedEvents[`${id}_pending_upcoming`];
+          delete settings.notifiedEvents[`${id}_pending_overdue`];
+          delete settings.notifiedEvents[`${id}_in_use_upcoming`];
+          delete settings.notifiedEvents[`${id}_in_use_overdue`];
+        }
+        showToast('Agendamento atualizado com sucesso!', 'success');
+      } else {
+        const newBooking = {
+          id: 'bk_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          teacher,
+          className,
+          date,
+          deliveryTime,
+          pickupTime,
+          notes,
+          equipments: modalSelectedEquipments,
+          status: 'pending' // pending | in_use | completed
+        };
+        bookings.push(newBooking);
+        showToast('Novo lembrete cadastrado!', 'success');
+      }
+
+      saveState();
+      closeBookingModal();
+      renderAll();
+    }
+
+    // =========================================================================
+    // EXCLUSÃO, CONFIGURAÇÕES E BACKUP JSON
+    // =========================================================================
+    let pendingConfirmCallback = null;
+
+    function openConfirmModal(title, message, onConfirm) {
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-message').textContent = message;
+      pendingConfirmCallback = onConfirm;
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeConfirmModal() {
+      const modal = document.getElementById('confirm-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      pendingConfirmCallback = null;
+    }
+
+    document.getElementById('confirm-yes-btn').addEventListener('click', () => {
+      if (typeof pendingConfirmCallback === 'function') {
+        pendingConfirmCallback();
+      }
+      closeConfirmModal();
+    });
+
+    function confirmDeleteBooking(id) {
+      openConfirmModal(
+        'Excluir agendamento?',
+        'Este registro será removido permanentemente da sua lista.',
+        () => {
+          bookings = bookings.filter(b => b.id !== id);
+          saveState();
+          renderAll();
+          showToast('Agendamento excluído.', 'info');
+        }
+      );
+    }
+
+    function confirmCancelReminder(id) {
+      const booking = bookings.find(item => item.id === id);
+      if (!booking) return;
+      openConfirmModal(
+        'Cancelar lembrete?',
+        `O lembrete de entrega para ${booking.teacher} (${booking.className}) será cancelado e removido da agenda.`,
+        () => {
+          bookings = bookings.filter(item => item.id !== id);
+          Object.keys(settings.notifiedEvents || {}).forEach(key => {
+            if (key.startsWith(`${id}_`)) delete settings.notifiedEvents[key];
+          });
+          saveState();
+          renderAll();
+          showToast('Lembrete cancelado.', 'info');
+        }
+      );
+    }
+
+    function openSettingsModal() {
+      populateSchoolDataFields();
+      const modal = document.getElementById('settings-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function updateLeadTime(mins) {
+      settings.leadTimeMinutes = parseInt(mins, 10) || 15;
+      saveState();
+      showToast(`Lembretes configurados para ${settings.leadTimeMinutes} min antes.`, 'success');
+      renderAll();
+    }
+
+    function exportJSON() {
+      const dataStr = JSON.stringify({ exportedAt: new Date().toISOString(), bookings, settings }, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `edulogistica_backup_${getTodayISO()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Arquivo de backup JSON baixado!', 'success');
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const importedList = Array.isArray(parsed) ? parsed : parsed.bookings;
+          if (!Array.isArray(importedList)) throw new Error('Formato inválido');
+          bookings = importedList;
+          const importedSettings = !Array.isArray(parsed) && parsed.settings && typeof parsed.settings === 'object'
+            ? parsed.settings
+            : {};
+          settings = {
+            soundEnabled: true,
+            leadTimeMinutes: 15,
+            notifiedEvents: {},
+            teachers: [],
+            classes: [],
+            equipment: [],
+            schoolCatalogsResetV1: true,
+            ...importedSettings,
+            schoolCatalogsResetV1: true
+          };
+          normalizeSchoolCatalogs();
+          saveState();
+          populateTeacherDatalist();
+          populateClassDatalist();
+          renderQuickEquipmentChips();
+          renderAll();
+          closeSettingsModal();
+          showToast(`${bookings.length} agendamento(s) importado(s) com sucesso!`, 'success');
+        } catch (err) {
+          showToast('Arquivo JSON inválido. Verifique o arquivo selecionado.', 'error');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function confirmClearAllData() {
+      openConfirmModal(
+        'Apagar todos os dados?',
+        'Todos os agendamentos salvos neste navegador serão apagados.',
+        () => {
+          bookings = [];
+          settings.notifiedEvents = {};
+          saveState();
+          renderAll();
+          closeSettingsModal();
+          showToast('Todos os registros foram limpos.', 'info');
+        }
+      );
+    }
+
+    // =========================================================================
+    // SISTEMA DE TOASTS E SEGURANÇA HTML
+    // =========================================================================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const colors = {
+        success: 'bg-emerald-600 text-white border-emerald-500',
+        error: 'bg-rose-600 text-white border-rose-500',
+        warning: 'bg-amber-500 text-slate-950 border-amber-400',
+        info: 'bg-slate-800 text-white border-slate-700'
+      };
+      const icons = {
+        success: 'check-circle',
+        error: 'alert-octagon',
+        warning: 'bell-ring',
+        info: 'info'
+      };
+
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-xs font-semibold transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+      toast.innerHTML = `
+        <i data-lucide="${icons[type] || 'info'}" class="w-4 h-4 shrink-0"></i>
+        <span class="flex-1">${escapeHTML(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4200);
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // =========================================================================
+    // INICIALIZAÇÃO DA APLICAÇÃO
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      updateHeaderControls();
+      populateTeacherDatalist();
+      populateClassDatalist();
+      renderQuickEquipmentChips();
+      updateClockAndMonitor();
+
+      if ('serviceWorker' in navigator && window.isSecureContext) {
+        navigator.serviceWorker.register('./service-worker.js').catch((error) => {
+          console.warn('Não foi possível ativar o modo de instalação/offline:', error);
+        });
+      }
+
+      // Atualiza o relógio e verifica prazos a cada 5 segundos
+      setInterval(updateClockAndMonitor, 5000);
+    });
+  </script>
+</body>
+</html>
