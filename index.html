@@ -1974,6 +1974,12 @@
       document.getElementById('password-recovery-form').reset();
     }
 
+    function isPasswordRecoveryCallback() {
+      const queryParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      return queryParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
+    }
+
     async function handlePasswordRecovery(event) {
       event.preventDefault();
       const password = document.getElementById('new-password').value;
@@ -2154,6 +2160,7 @@
     }
 
     async function initializeAuthentication() {
+      if (isPasswordRecoveryCallback()) showPasswordRecovery();
       const configured = SUPABASE_URL.startsWith('https://') && !SUPABASE_PUBLISHABLE_KEY.includes('COLE_AQUI');
       if (!configured || !window.supabase?.createClient) {
         setLoginStatus('Configure a URL do projeto e a chave pública publishable do Supabase para ativar o login.', 'warning');
