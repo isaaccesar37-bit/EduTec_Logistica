@@ -2048,6 +2048,8 @@
       }
     }
 
+    // Cada conta Supabase usa uma linha própria, identificada pelo UUID autenticado.
+    // Os usuários são cadastrados em public.user_accounts e não ficam fixos no HTML.
     async function activateAuthenticatedUser(user) {
       currentUser = user;
       cloudSyncReady = false;
