@@ -79,7 +79,7 @@
         <div class="rounded-xl bg-indigo-100 p-3 text-indigo-700"><i data-lucide="laptop-2" class="h-6 w-6"></i></div>
         <div>
           <h1 class="text-xl font-extrabold text-slate-900">EduLogística</h1>
-          <p class="text-xs text-slate-500">Acesse sua conta para continuar</p>
+          <p id="login-subtitle" class="text-xs text-slate-500">Acesse sua conta para continuar</p>
         </div>
       </div>
       <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
@@ -98,7 +98,26 @@
           Entrar
         </button>
       </form>
-      <div class="mt-5 border-t border-slate-200 pt-4">
+      <form id="password-recovery-form" onsubmit="handlePasswordRecovery(event)" class="hidden space-y-4">
+        <div>
+          <label for="new-password" class="mb-1 block text-sm font-semibold text-slate-700">Nova senha</label>
+          <input id="new-password" name="new-password" type="password" autocomplete="new-password" minlength="6" required
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="confirm-new-password" class="mb-1 block text-sm font-semibold text-slate-700">Confirme a nova senha</label>
+          <input id="confirm-new-password" name="confirm-new-password" type="password" autocomplete="new-password" minlength="6" required
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <p id="password-recovery-status" class="min-h-5 text-xs text-slate-500" aria-live="polite">Informe uma nova senha.</p>
+        <button id="password-recovery-submit" type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+          Salvar nova senha
+        </button>
+        <button type="button" onclick="cancelPasswordRecovery()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+          Voltar ao login
+        </button>
+      </form>
+      <div id="local-admin-access" class="mt-5 border-t border-slate-200 pt-4">
         <button type="button" onclick="enterLocalAdminMode()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
           Acesso administrativo local
         </button>
@@ -636,6 +655,7 @@
     let cloudErrorShown = false;
     let monitorIntervalStarted = false;
     let localAdminMode = false;
+    let passwordRecoveryMode = false;
 
     // Estado dos filtros ativos
     let currentDateFilter = 'today';
@@ -1863,6 +1883,66 @@
       status.className = `min-h-5 text-xs ${color}`;
     }
 
+    function setPasswordRecoveryStatus(message, type = 'info') {
+      const status = document.getElementById('password-recovery-status');
+      status.textContent = message;
+      const color = type === 'error' ? 'text-rose-600' : type === 'success' ? 'text-emerald-700' : 'text-slate-500';
+      status.className = `min-h-5 text-xs ${color}`;
+    }
+
+    function showPasswordRecovery() {
+      passwordRecoveryMode = true;
+      document.getElementById('login-subtitle').textContent = 'Escolha uma nova senha para sua conta';
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('local-admin-access').classList.add('hidden');
+      document.getElementById('password-recovery-form').classList.remove('hidden');
+      setPasswordRecoveryStatus('Informe uma nova senha.');
+    }
+
+    function showStandardLogin() {
+      passwordRecoveryMode = false;
+      document.getElementById('login-subtitle').textContent = 'Acesse sua conta para continuar';
+      document.getElementById('password-recovery-form').classList.add('hidden');
+      document.getElementById('login-form').classList.remove('hidden');
+      document.getElementById('local-admin-access').classList.remove('hidden');
+      document.getElementById('password-recovery-form').reset();
+    }
+
+    async function handlePasswordRecovery(event) {
+      event.preventDefault();
+      const password = document.getElementById('new-password').value;
+      const confirmation = document.getElementById('confirm-new-password').value;
+      if (password !== confirmation) {
+        setPasswordRecoveryStatus('As senhas não coincidem.', 'error');
+        return;
+      }
+      if (!supabaseClient) {
+        setPasswordRecoveryStatus('Não foi possível conectar ao serviço de autenticação.', 'error');
+        return;
+      }
+
+      const button = document.getElementById('password-recovery-submit');
+      button.disabled = true;
+      setPasswordRecoveryStatus('Atualizando sua senha…');
+      try {
+        const { error } = await supabaseClient.auth.updateUser({ password });
+        if (error) throw error;
+        await supabaseClient.auth.signOut();
+        showStandardLogin();
+        setLoginStatus('Senha atualizada. Entre com seu usuário e a nova senha.', 'success');
+      } catch (error) {
+        setPasswordRecoveryStatus(error.message || 'Não foi possível atualizar a senha.', 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function cancelPasswordRecovery() {
+      if (supabaseClient) await supabaseClient.auth.signOut();
+      showStandardLogin();
+      setLoginStatus('Recuperação cancelada.');
+    }
+
     function lockApplication() {
       cloudSyncReady = false;
       clearTimeout(cloudSaveTimer);
@@ -1873,6 +1953,7 @@
       document.getElementById('app-shell').classList.add('hidden');
       document.getElementById('login-screen').classList.remove('hidden');
       document.getElementById('login-form').reset();
+      showStandardLogin();
     }
 
     function enterLocalAdminMode() {
@@ -2017,6 +2098,7 @@
         auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
       });
       supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') showPasswordRecovery();
         if (event === 'SIGNED_OUT') lockApplication();
       });
 
@@ -2025,7 +2107,9 @@
         setLoginStatus('Não foi possível consultar a sessão do Supabase.', 'error');
         return;
       }
-      if (data.session?.user) {
+      if (passwordRecoveryMode) {
+        showPasswordRecovery();
+      } else if (data.session?.user) {
         try {
           await activateAuthenticatedUser(data.session.user);
         } catch (authError) {
