@@ -18,8 +18,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Cliente oficial do Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Firebase Web SDK: autenticação e banco de dados -->
+  <script src="https://www.gstatic.com/firebasejs/13.3.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/13.3.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore-compat.js"></script>
 
   <script>
     tailwind.config = {
@@ -84,8 +86,8 @@
       </div>
       <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
-          <label for="login-username" class="mb-1 block text-sm font-semibold text-slate-700">Nome de usuário</label>
-          <input id="login-username" name="username" type="text" autocomplete="username" autocapitalize="none" required
+          <label for="login-email" class="mb-1 block text-sm font-semibold text-slate-700">E-mail</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" autocapitalize="none" required
             class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
         <div>
@@ -116,30 +118,11 @@
           Voltar ao login
         </button>
       </form>
-      <form id="password-recovery-form" onsubmit="handlePasswordRecovery(event)" class="hidden space-y-4">
-        <div>
-          <label for="new-password" class="mb-1 block text-sm font-semibold text-slate-700">Nova senha</label>
-          <input id="new-password" name="new-password" type="password" autocomplete="new-password" minlength="6" required
-            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        </div>
-        <div>
-          <label for="confirm-new-password" class="mb-1 block text-sm font-semibold text-slate-700">Confirme a nova senha</label>
-          <input id="confirm-new-password" name="confirm-new-password" type="password" autocomplete="new-password" minlength="6" required
-            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-        </div>
-        <p id="password-recovery-status" class="min-h-5 text-xs text-slate-500" aria-live="polite">Informe uma nova senha.</p>
-        <button id="password-recovery-submit" type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
-          Salvar nova senha
-        </button>
-        <button type="button" onclick="cancelPasswordRecovery()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
-          Voltar ao login
-        </button>
-      </form>
       <div id="local-admin-access" class="mt-5 border-t border-slate-200 pt-4">
         <button type="button" onclick="enterLocalAdminMode()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
           Acesso administrativo local
         </button>
-        <p class="mt-2 text-center text-[11px] leading-relaxed text-slate-500">Usa os dados deste aparelho. As alterações não serão sincronizadas com o Supabase.</p>
+        <p class="mt-2 text-center text-[11px] leading-relaxed text-slate-500">Usa os dados deste aparelho. As alterações não serão sincronizadas com o Firebase.</p>
       </div>
     </div>
   </section>
@@ -640,9 +623,22 @@
     const STORAGE_KEY = 'edulogistica_bookings_v1';
     const SETTINGS_KEY = 'edulogistica_settings_v1';
     const LOCAL_USER_KEY = 'edulogistica_user_id_v1';
-    const SUPABASE_URL = 'https://ylkrqgaslmtakbwvzbts.supabase.co';
-    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_MlBWoOdT8CWRhvQJZ5IRdQ_Q85_tNqI';
-    const SUPABASE_LOGIN_FUNCTION = 'username-login';
+    // Copie estes valores de Firebase Console > Configurações do projeto > Seus apps > App da Web.
+    // A configuração web identifica o projeto; não inclua senhas ou credenciais de administrador aqui.
+    const FIREBASE_CONFIG = {
+      apiKey: 'AIzaSyBiNsCGWfkKo8PuL7v0d53Dq20YJ_87x9c',
+      authDomain: 'edulogistica-c13c1.firebaseapp.com',
+      projectId: 'edulogistica-c13c1',
+      storageBucket: 'edulogistica-c13c1.firebasestorage.app',
+      messagingSenderId: '815586333333',
+      appId: '1:815586333333:web:0aed17e50c90d8ccddc19c',
+      measurementId: 'G-WWDJXKJ2FZ'
+    };
+
+    // Permite importar um cache deste aparelho somente para a conta antiga correspondente.
+    const LEGACY_SUPABASE_ACCOUNT_EMAILS = {
+      '626574ee-4275-49f6-bf9b-cf8856130f88': 'isaaccesar37@gmail.com'
+    };
 
     // Catálogo padrão de equipamentos com ícones Lucide
     const DEFAULT_EQUIPMENTS = [
@@ -666,14 +662,14 @@
       equipment: [],
       schoolCatalogsResetV1: false
     };
-    let supabaseClient = null;
+    let firebaseAuth = null;
+    let firebaseDb = null;
     let currentUser = null;
     let cloudSyncReady = false;
     let cloudSaveTimer = null;
     let cloudErrorShown = false;
     let monitorIntervalStarted = false;
     let localAdminMode = false;
-    let passwordRecoveryMode = false;
 
     // Estado dos filtros ativos
     let currentDateFilter = 'today';
@@ -774,27 +770,24 @@
     function persistLocalState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      if (currentUser) localStorage.setItem(LOCAL_USER_KEY, currentUser.id);
+      if (currentUser) localStorage.setItem(LOCAL_USER_KEY, currentUser.uid);
     }
 
     function queueCloudSave() {
-      if (!supabaseClient || !currentUser || !cloudSyncReady) return;
+      if (!firebaseDb || !currentUser || !cloudSyncReady) return;
       clearTimeout(cloudSaveTimer);
       cloudSaveTimer = setTimeout(async () => {
         try {
           if (!currentUser || !cloudSyncReady) return;
           const snapshot = {
-            user_id: currentUser.id,
             bookings,
             settings,
-            updated_at: new Date().toISOString()
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           };
-          const { error } = await supabaseClient
-            .from('edulogistica_user_data')
-            .upsert(snapshot, { onConflict: 'user_id' });
-          if (error) throw error;
+          await firebaseDb.collection('users').doc(currentUser.uid)
+            .collection('app').doc('state').set(snapshot);
         } catch (error) {
-          console.error('Erro ao sincronizar dados com Supabase:', error);
+          console.error('Erro ao sincronizar dados com Firebase:', error);
           if (!cloudErrorShown) {
             showToast('Não foi possível sincronizar com o banco de dados. Os dados permanecem salvos neste aparelho.', 'error');
             cloudErrorShown = true;
@@ -1901,13 +1894,6 @@
       status.className = `min-h-5 text-xs ${color}`;
     }
 
-    function setPasswordRecoveryStatus(message, type = 'info') {
-      const status = document.getElementById('password-recovery-status');
-      status.textContent = message;
-      const color = type === 'error' ? 'text-rose-600' : type === 'success' ? 'text-emerald-700' : 'text-slate-500';
-      status.className = `min-h-5 text-xs ${color}`;
-    }
-
     function setForgotPasswordStatus(message, type = 'info') {
       const status = document.getElementById('forgot-password-status');
       status.textContent = message;
@@ -1916,10 +1902,8 @@
     }
 
     function showForgotPassword() {
-      passwordRecoveryMode = false;
       document.getElementById('login-subtitle').textContent = 'Recupere o acesso à sua conta';
       document.getElementById('login-form').classList.add('hidden');
-      document.getElementById('password-recovery-form').classList.add('hidden');
       document.getElementById('forgot-password-form').classList.remove('hidden');
       document.getElementById('local-admin-access').classList.add('hidden');
       setForgotPasswordStatus('');
@@ -1927,7 +1911,7 @@
 
     async function handleForgotPassword(event) {
       event.preventDefault();
-      if (!supabaseClient) {
+      if (!firebaseAuth) {
         setForgotPasswordStatus('O serviço de autenticação ainda não está disponível.', 'error');
         return;
       }
@@ -1937,82 +1921,28 @@
       button.disabled = true;
       setForgotPasswordStatus('Solicitando o link de recuperação…');
       try {
-        const redirectTo = `${window.location.origin}${window.location.pathname}`;
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
-        if (error) {
-          if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
-            throw new Error('O limite de envio de e-mails foi atingido. Aguarde um pouco antes de tentar novamente.');
-          }
-          throw error;
-        }
+        const continueUrl = `${window.location.origin}${window.location.pathname}`;
+        await firebaseAuth.sendPasswordResetEmail(email, { url: continueUrl, handleCodeInApp: false });
         setForgotPasswordStatus('Se esse e-mail estiver cadastrado, você receberá um link para redefinir a senha.', 'success');
       } catch (error) {
-        setForgotPasswordStatus(error.message || 'Não foi possível enviar o link de recuperação.', 'error');
+        const messages = {
+          'auth/too-many-requests': 'Muitas tentativas. Aguarde antes de solicitar outro e-mail.',
+          'auth/invalid-email': 'Confira o formato do e-mail informado.',
+          'auth/operation-not-allowed': 'Ative o acesso por e-mail e senha nas configurações de Authentication do Firebase.',
+          'auth/user-not-found': 'Não encontramos uma conta com esse e-mail.'
+        };
+        setForgotPasswordStatus(messages[error.code] || error.message || 'Não foi possível enviar o link de recuperação.', 'error');
       } finally {
         button.disabled = false;
       }
-    }
-
-    function showPasswordRecovery() {
-      passwordRecoveryMode = true;
-      document.getElementById('login-subtitle').textContent = 'Escolha uma nova senha para sua conta';
-      document.getElementById('login-form').classList.add('hidden');
-      document.getElementById('forgot-password-form').classList.add('hidden');
-      document.getElementById('local-admin-access').classList.add('hidden');
-      document.getElementById('password-recovery-form').classList.remove('hidden');
-      setPasswordRecoveryStatus('Informe uma nova senha.');
     }
 
     function showStandardLogin() {
-      passwordRecoveryMode = false;
       document.getElementById('login-subtitle').textContent = 'Acesse sua conta para continuar';
       document.getElementById('forgot-password-form').classList.add('hidden');
-      document.getElementById('password-recovery-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('local-admin-access').classList.remove('hidden');
       document.getElementById('forgot-password-form').reset();
-      document.getElementById('password-recovery-form').reset();
-    }
-
-    function isPasswordRecoveryCallback() {
-      const queryParams = new URLSearchParams(window.location.search);
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-      return queryParams.get('type') === 'recovery' || hashParams.get('type') === 'recovery';
-    }
-
-    async function handlePasswordRecovery(event) {
-      event.preventDefault();
-      const password = document.getElementById('new-password').value;
-      const confirmation = document.getElementById('confirm-new-password').value;
-      if (password !== confirmation) {
-        setPasswordRecoveryStatus('As senhas não coincidem.', 'error');
-        return;
-      }
-      if (!supabaseClient) {
-        setPasswordRecoveryStatus('Não foi possível conectar ao serviço de autenticação.', 'error');
-        return;
-      }
-
-      const button = document.getElementById('password-recovery-submit');
-      button.disabled = true;
-      setPasswordRecoveryStatus('Atualizando sua senha…');
-      try {
-        const { error } = await supabaseClient.auth.updateUser({ password });
-        if (error) throw error;
-        await supabaseClient.auth.signOut();
-        showStandardLogin();
-        setLoginStatus('Senha atualizada. Entre com seu usuário e a nova senha.', 'success');
-      } catch (error) {
-        setPasswordRecoveryStatus(error.message || 'Não foi possível atualizar a senha.', 'error');
-      } finally {
-        button.disabled = false;
-      }
-    }
-
-    async function cancelPasswordRecovery() {
-      if (supabaseClient) await supabaseClient.auth.signOut();
-      showStandardLogin();
-      setLoginStatus('Recuperação cancelada.');
     }
 
     function lockApplication() {
@@ -2046,7 +1976,7 @@
       populateClassOptions();
       renderQuickEquipmentChips();
       updateClockAndMonitor();
-      setLoginStatus('Acesso local ativado. Os dados não serão sincronizados com o Supabase.', 'success');
+      setLoginStatus('Acesso local ativado. Os dados não serão sincronizados com o Firebase.', 'success');
 
       if (!monitorIntervalStarted) {
         monitorIntervalStarted = true;
@@ -2054,28 +1984,24 @@
       }
     }
 
-    // Cada conta Supabase usa uma linha própria, identificada pelo UUID autenticado.
-    // Os usuários são cadastrados em public.user_accounts e não ficam fixos no HTML.
+    // Cada usuário tem um documento privado no Firestore, identificado pelo UID do Firebase.
     async function activateAuthenticatedUser(user) {
       currentUser = user;
       cloudSyncReady = false;
       cloudErrorShown = false;
       setLoginStatus('Carregando seus dados…');
+      const stateRef = firebaseDb.collection('users').doc(user.uid).collection('app').doc('state');
+      const savedState = await stateRef.get();
 
-      const { data, error } = await supabaseClient
-        .from('edulogistica_user_data')
-        .select('bookings, settings')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (error) throw new Error('Não foi possível acessar os dados no Supabase. Confira se o SQL de configuração foi aplicado.');
-
-      if (data) {
+      if (savedState.exists) {
+        const data = savedState.data() || {};
         bookings = Array.isArray(data.bookings) ? data.bookings : [];
         settings = { ...createDefaultSettings(), ...(data.settings || {}) };
-        normalizeSchoolCatalogs();
       } else {
         const localOwner = localStorage.getItem(LOCAL_USER_KEY);
-        if (!localOwner || localOwner === user.id) {
+        const legacyEmail = LEGACY_SUPABASE_ACCOUNT_EMAILS[localOwner];
+        const canImportLocalCache = !localOwner || localOwner === user.uid || legacyEmail === (user.email || '').toLowerCase();
+        if (canImportLocalCache) {
           bookings = [];
           settings = createDefaultSettings();
           loadState();
@@ -2084,15 +2010,12 @@
           settings = createDefaultSettings();
         }
         normalizeSchoolCatalogs();
-        const { error: insertError } = await supabaseClient
-          .from('edulogistica_user_data')
-          .upsert({ user_id: user.id, bookings, settings, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-        if (insertError) throw new Error('Não foi possível criar o espaço de dados deste usuário. Confira as políticas do banco.');
+        await stateRef.set({ bookings, settings, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
       }
 
       persistLocalState();
       cloudSyncReady = true;
-      document.getElementById('signed-in-user').textContent = user.user_metadata?.username || user.email || 'Usuário conectado';
+      document.getElementById('signed-in-user').textContent = user.displayName || user.email || 'Usuário conectado';
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('app-shell').classList.remove('hidden');
       updateHeaderControls();
@@ -2110,48 +2033,44 @@
 
     async function handleLogin(event) {
       event.preventDefault();
-      if (!supabaseClient) {
-        setLoginStatus('O Supabase ainda não foi configurado neste app.', 'warning');
+      if (!firebaseAuth) {
+        setLoginStatus('O Firebase ainda não foi configurado neste app.', 'warning');
         return;
       }
 
-      const username = document.getElementById('login-username').value.trim().toLocaleLowerCase('pt-BR');
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
       const password = document.getElementById('login-password').value;
       const button = document.getElementById('login-submit');
       button.disabled = true;
       setLoginStatus('Verificando acesso…');
 
       try {
-        const { data, error } = await supabaseClient.functions.invoke(SUPABASE_LOGIN_FUNCTION, {
-          body: { username, password }
-        });
-        if (error || !data?.session?.access_token || !data?.session?.refresh_token) {
-          throw new Error('Usuário ou senha inválidos, ou função de login não configurada.');
-        }
-
-        const { data: authData, error: sessionError } = await supabaseClient.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
-        if (sessionError || !authData.user) throw new Error('Não foi possível iniciar a sessão.');
-        await activateAuthenticatedUser(authData.user);
+        await firebaseAuth.signInWithEmailAndPassword(email, password);
       } catch (error) {
         console.error('Falha no login:', error);
-        if (supabaseClient) await supabaseClient.auth.signOut();
-        setLoginStatus(error.message || 'Não foi possível entrar. Confira o usuário e a senha.', 'error');
+        const messages = {
+          'auth/invalid-credential': 'E-mail ou senha incorretos.',
+          'auth/user-not-found': 'Não existe uma conta do Firebase com esse e-mail.',
+          'auth/wrong-password': 'E-mail ou senha incorretos.',
+          'auth/too-many-requests': 'Muitas tentativas. Aguarde um pouco e tente novamente.',
+          'auth/operation-not-allowed': 'Ative o acesso por e-mail e senha nas configurações de Authentication do Firebase.'
+        };
+        setLoginStatus(messages[error.code] || error.message || 'Não foi possível entrar. Confira o e-mail e a senha.', 'error');
       } finally {
         button.disabled = false;
       }
     }
 
     async function signOut() {
-      if (localAdminMode || !supabaseClient) {
+      if (localAdminMode || !firebaseAuth) {
         lockApplication();
         setLoginStatus('Acesso local encerrado.');
         return;
       }
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) {
+      try {
+        await firebaseAuth.signOut();
+      } catch (error) {
+        console.error('Falha ao encerrar sessão do Firebase:', error);
         showToast('Não foi possível encerrar a sessão.', 'error');
         return;
       }
@@ -2160,41 +2079,41 @@
     }
 
     async function initializeAuthentication() {
-      if (isPasswordRecoveryCallback()) showPasswordRecovery();
-      const configured = SUPABASE_URL.startsWith('https://') && !SUPABASE_PUBLISHABLE_KEY.includes('COLE_AQUI');
-      if (!configured || !window.supabase?.createClient) {
-        setLoginStatus('Configure a URL do projeto e a chave pública publishable do Supabase para ativar o login.', 'warning');
+      const configured = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('COLE_')
+        && FIREBASE_CONFIG.authDomain && !FIREBASE_CONFIG.authDomain.startsWith('COLE_')
+        && FIREBASE_CONFIG.projectId && !FIREBASE_CONFIG.projectId.startsWith('COLE_')
+        && FIREBASE_CONFIG.appId && !FIREBASE_CONFIG.appId.startsWith('COLE_');
+      if (!configured || !window.firebase?.initializeApp || !window.firebase?.firestore) {
+        setLoginStatus('Configure os dados do aplicativo Firebase neste arquivo para ativar o login.', 'warning');
         document.getElementById('login-submit').disabled = true;
         lucide.createIcons();
         return;
       }
 
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-      });
-      supabaseClient.auth.onAuthStateChange((event) => {
-        if (event === 'PASSWORD_RECOVERY') showPasswordRecovery();
-        if (event === 'SIGNED_OUT') lockApplication();
-      });
-
-      const { data, error } = await supabaseClient.auth.getSession();
-      if (error) {
-        setLoginStatus('Não foi possível consultar a sessão do Supabase.', 'error');
+      try {
+        firebase.initializeApp(FIREBASE_CONFIG);
+        firebaseAuth = firebase.auth();
+        firebaseDb = firebase.firestore();
+      } catch (error) {
+        console.error('Falha ao iniciar Firebase:', error);
+        setLoginStatus('Não foi possível iniciar o Firebase. Confira a configuração do app.', 'error');
         return;
       }
-      if (passwordRecoveryMode) {
-        showPasswordRecovery();
-      } else if (data.session?.user) {
-        try {
-          await activateAuthenticatedUser(data.session.user);
-        } catch (authError) {
-          console.error('Erro ao abrir os dados do usuário:', authError);
-          setLoginStatus(authError.message, 'error');
-          await supabaseClient.auth.signOut();
+
+      firebaseAuth.onAuthStateChanged(async (user) => {
+        if (!user) {
+          if (currentUser) lockApplication();
+          setLoginStatus('Informe o e-mail e a senha cadastrados no Firebase.');
+          return;
         }
-      } else {
-        setLoginStatus('Informe seu nome de usuário e senha para entrar.');
-      }
+        try {
+          await activateAuthenticatedUser(user);
+        } catch (authError) {
+          console.error('Erro ao abrir os dados do usuário no Firebase:', authError);
+          setLoginStatus(authError.message || 'Não foi possível acessar seus dados no Firebase.', 'error');
+          await firebaseAuth.signOut();
+        }
+      });
       lucide.createIcons();
     }
 
