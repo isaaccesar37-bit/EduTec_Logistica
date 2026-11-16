@@ -97,6 +97,24 @@
         <button id="login-submit" type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
           Entrar
         </button>
+        <button type="button" onclick="showForgotPassword()" class="w-full text-sm font-semibold text-indigo-600 hover:text-indigo-800">
+          Esqueci minha senha
+        </button>
+      </form>
+      <form id="forgot-password-form" onsubmit="handleForgotPassword(event)" class="hidden space-y-4">
+        <p class="text-sm leading-relaxed text-slate-600">Informe o e-mail cadastrado na sua conta. Enviaremos um link para você criar uma nova senha.</p>
+        <div>
+          <label for="recovery-email" class="mb-1 block text-sm font-semibold text-slate-700">E-mail da conta</label>
+          <input id="recovery-email" name="email" type="email" autocomplete="email" required
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <p id="forgot-password-status" class="min-h-5 text-xs text-slate-500" aria-live="polite"></p>
+        <button id="forgot-password-submit" type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+          Enviar link de recuperação
+        </button>
+        <button type="button" onclick="showStandardLogin()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+          Voltar ao login
+        </button>
       </form>
       <form id="password-recovery-form" onsubmit="handlePasswordRecovery(event)" class="hidden space-y-4">
         <div>
@@ -1890,10 +1908,56 @@
       status.className = `min-h-5 text-xs ${color}`;
     }
 
+    function setForgotPasswordStatus(message, type = 'info') {
+      const status = document.getElementById('forgot-password-status');
+      status.textContent = message;
+      const color = type === 'error' ? 'text-rose-600' : type === 'success' ? 'text-emerald-700' : 'text-slate-500';
+      status.className = `min-h-5 text-xs ${color}`;
+    }
+
+    function showForgotPassword() {
+      passwordRecoveryMode = false;
+      document.getElementById('login-subtitle').textContent = 'Recupere o acesso à sua conta';
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('password-recovery-form').classList.add('hidden');
+      document.getElementById('forgot-password-form').classList.remove('hidden');
+      document.getElementById('local-admin-access').classList.add('hidden');
+      setForgotPasswordStatus('');
+    }
+
+    async function handleForgotPassword(event) {
+      event.preventDefault();
+      if (!supabaseClient) {
+        setForgotPasswordStatus('O serviço de autenticação ainda não está disponível.', 'error');
+        return;
+      }
+
+      const email = document.getElementById('recovery-email').value.trim();
+      const button = document.getElementById('forgot-password-submit');
+      button.disabled = true;
+      setForgotPasswordStatus('Solicitando o link de recuperação…');
+      try {
+        const redirectTo = `${window.location.origin}${window.location.pathname}`;
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) {
+          if (error.status === 429 || error.code === 'over_email_send_rate_limit') {
+            throw new Error('O limite de envio de e-mails foi atingido. Aguarde um pouco antes de tentar novamente.');
+          }
+          throw error;
+        }
+        setForgotPasswordStatus('Se esse e-mail estiver cadastrado, você receberá um link para redefinir a senha.', 'success');
+      } catch (error) {
+        setForgotPasswordStatus(error.message || 'Não foi possível enviar o link de recuperação.', 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
     function showPasswordRecovery() {
       passwordRecoveryMode = true;
       document.getElementById('login-subtitle').textContent = 'Escolha uma nova senha para sua conta';
       document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('forgot-password-form').classList.add('hidden');
       document.getElementById('local-admin-access').classList.add('hidden');
       document.getElementById('password-recovery-form').classList.remove('hidden');
       setPasswordRecoveryStatus('Informe uma nova senha.');
@@ -1902,9 +1966,11 @@
     function showStandardLogin() {
       passwordRecoveryMode = false;
       document.getElementById('login-subtitle').textContent = 'Acesse sua conta para continuar';
+      document.getElementById('forgot-password-form').classList.add('hidden');
       document.getElementById('password-recovery-form').classList.add('hidden');
       document.getElementById('login-form').classList.remove('hidden');
       document.getElementById('local-admin-access').classList.remove('hidden');
+      document.getElementById('forgot-password-form').reset();
       document.getElementById('password-recovery-form').reset();
     }
 
