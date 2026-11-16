@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>EduLogística — Controle de Equipamentos</title>
+  <title>LembretesEduTec — Controle de Equipamentos</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter -->
@@ -80,7 +80,7 @@
       <div class="flex items-center gap-3 mb-6">
         <div class="rounded-xl bg-indigo-100 p-3 text-indigo-700"><i data-lucide="laptop-2" class="h-6 w-6"></i></div>
         <div>
-          <h1 class="text-xl font-extrabold text-slate-900">EduLogística</h1>
+          <h1 class="text-xl font-extrabold text-slate-900">LembretesEduTec</h1>
           <p id="login-subtitle" class="text-xs text-slate-500">Acesse sua conta para continuar</p>
         </div>
       </div>
@@ -156,7 +156,7 @@
           </div>
           <div>
             <h1 class="text-lg sm:text-xl font-bold tracking-tight leading-tight flex items-center gap-2">
-              EduLogística
+              LembretesEduTec
               <span class="hidden sm:inline-block text-[11px] font-semibold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/20">
                 Tecnologia Educacional
               </span>
@@ -346,7 +346,7 @@
   <!-- Rodapé -->
   <footer class="bg-white border-t border-slate-200 py-4 mt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-      <p>EduLogística — Assistente pessoal para entrega e recolhimento de equipamentos escolares.</p>
+      <p>LembretesEduTec — Assistente pessoal para entrega e recolhimento de equipamentos escolares.</p>
       <p>Dados salvos localmente no seu navegador.</p>
     </div>
   </footer>
@@ -860,7 +860,7 @@
         return;
       }
       if (Notification.permission === 'granted') {
-        new Notification('EduLogística', {
+        new Notification('LembretesEduTec', {
           body: 'As notificações já estão ativas neste dispositivo!'
         });
         updateHeaderControls();
@@ -870,7 +870,7 @@
         updateHeaderControls();
         if (perm === 'granted') {
           showToast('Notificações do navegador ativadas!', 'success');
-          new Notification('EduLogística Ativado', {
+          new Notification('LembretesEduTec Ativado', {
             body: 'Você será avisado antes das entregas e recolhimentos.'
           });
         } else {

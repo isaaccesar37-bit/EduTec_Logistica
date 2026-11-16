@@ -1,0 +1,61 @@
+EDULOGÍSTICA — CONFIGURAÇÃO DO FIREBASE
+
+O aplicativo foi preparado para usar Firebase Authentication e Cloud Firestore. Cada conta usa seu próprio espaço de dados. O acesso administrativo local continua funcionando sem sincronização.
+
+ANTES DE TROCAR
+Se há informações importantes apenas na nuvem antiga do Supabase, mantenha o projeto Supabase ativo por enquanto. A troca do app não copia automaticamente dados da nuvem Supabase para o Firebase. O app pode importar o cache local deste navegador quando a conta Firebase usar o mesmo e-mail da conta antiga. Dados que só existam no Supabase precisam de uma exportação/migração separada.
+
+1. CRIAR O PROJETO E O APP WEB
+- Acesse https://console.firebase.google.com/ e crie um projeto Firebase.
+- Na página inicial do projeto, escolha adicionar um app Web (ícone </>).
+- Dê um nome ao app e conclua o cadastro. Não é necessário configurar Firebase Hosting: o site continua hospedado no GitHub Pages.
+- Copie os valores do objeto firebaseConfig que o Firebase mostrar.
+
+2. ATIVAR O LOGIN POR E-MAIL
+- No menu do Firebase, abra Authentication e clique em Começar, se aparecer.
+- Em Sign-in method / Método de login, ative E-mail/senha e salve.
+- Em Users / Usuários, crie uma conta com o e-mail isaaccesar37@gmail.com.
+- Defina uma senha para a conta. A senha do Supabase não é copiada. O app agora pede o e-mail e a senha do Firebase; o nome de usuário antigo não é usado no login.
+- O nome de exibição pode ser isaaccesar37.
+
+3. AUTORIZAR O SITE E A RECUPERAÇÃO DE SENHA
+- Em Authentication > Settings / Configurações, encontre Authorized domains / Domínios autorizados.
+- Adicione isaaccesar37-bit.github.io (sem https e sem o caminho do repositório).
+- O botão “Esqueci minha senha” enviará um e-mail do Firebase. A página oficial do Firebase permite definir a senha e depois retorna ao app.
+
+4. CRIAR O BANCO DE DADOS
+- Abra Firestore Database e clique em Criar banco de dados.
+- Escolha o modo de produção e conclua a criação.
+- Na aba Rules / Regras, substitua o conteúdo pelas regras abaixo e publique:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/app/{documentId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+
+Essas regras limitam cada usuário ao próprio documento. Não use regras que liberem leitura ou gravação para qualquer pessoa.
+
+5. CONFIGURAÇÃO JÁ INSERIDA NO CÓDIGO
+- Os dados firebaseConfig enviados pelo usuário já estão no arquivo index.html do pacote.
+- Essa configuração identifica o app Web. Não coloque senhas, chave de conta de serviço ou credencial de administrador no HTML.
+- Para apontar o app a outro projeto Firebase no futuro, substitua o objeto FIREBASE_CONFIG usando os dados do novo app Web.
+- Salve mudanças no GitHub com Commit changes.
+
+6. PUBLICAR A VERSÃO NOVA
+Envie para a raiz do repositório do GitHub Pages:
+- index.html (contém o app e a configuração Firebase)
+- service-worker.js (versão de cache atualizada)
+- manifest.webmanifest e a pasta icons, se ainda não estiverem no repositório
+
+Depois da publicação, abra o app e recarregue com Ctrl+Shift+R. Entre com o e-mail e a senha criados no Firebase. Faça uma alteração; ela deve aparecer novamente após sair e entrar com a mesma conta. A outra conta terá dados separados.
+
+ARQUIVOS
+- index.html: aplicativo e bloco FIREBASE_CONFIG.
+- service-worker.js, manifest.webmanifest e icons/: instalação e uso básico offline.
+- Firebase-Regras.txt: regras do Firestore para copiar no console.
+
+O app continua salvando um cache local no aparelho e, quando conectado, sincroniza automaticamente os lembretes e configurações para o Firestore.
