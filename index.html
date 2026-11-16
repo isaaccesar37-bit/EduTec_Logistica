@@ -18,6 +18,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Cliente oficial do Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -69,6 +72,42 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <section id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-brand-900 px-4 py-8">
+    <div class="w-full max-w-sm rounded-2xl bg-white p-6 sm:p-8 shadow-2xl">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="rounded-xl bg-indigo-100 p-3 text-indigo-700"><i data-lucide="laptop-2" class="h-6 w-6"></i></div>
+        <div>
+          <h1 class="text-xl font-extrabold text-slate-900">EduLogística</h1>
+          <p class="text-xs text-slate-500">Acesse sua conta para continuar</p>
+        </div>
+      </div>
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label for="login-username" class="mb-1 block text-sm font-semibold text-slate-700">Nome de usuário</label>
+          <input id="login-username" name="username" type="text" autocomplete="username" autocapitalize="none" required
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="login-password" class="mb-1 block text-sm font-semibold text-slate-700">Senha</label>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required
+            class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-base focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <p id="login-status" class="min-h-5 text-xs text-slate-500" aria-live="polite">Conectando ao serviço de autenticação…</p>
+        <button id="login-submit" type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 font-bold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50">
+          Entrar
+        </button>
+      </form>
+      <div class="mt-5 border-t border-slate-200 pt-4">
+        <button type="button" onclick="enterLocalAdminMode()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+          Acesso administrativo local
+        </button>
+        <p class="mt-2 text-center text-[11px] leading-relaxed text-slate-500">Usa os dados deste aparelho. As alterações não serão sincronizadas com o Supabase.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="app-shell" class="hidden min-h-screen flex flex-col">
 
   <!-- Barra de Notificação Flutuante (Toast / Alertas Internos) -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
@@ -506,6 +545,15 @@
         </div>
 
         <!-- Zona de Limpeza -->
+        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div class="min-w-0">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Conta conectada</p>
+            <p id="signed-in-user" class="truncate text-xs font-semibold text-slate-800"></p>
+          </div>
+          <button type="button" onclick="signOut()" class="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100">Sair</button>
+        </div>
+
+        <!-- Zona de Limpeza -->
         <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
           <button type="button" onclick="confirmClearAllData()"
             class="text-xs font-semibold text-rose-600 hover:text-rose-800 flex items-center gap-1.5">
@@ -546,12 +594,18 @@
     </div>
   </div>
 
+  </div>
+
   <script>
     // =========================================================================
     // CONFIGURAÇÃO INICIAL E ESTADO DA APLICAÇÃO
     // =========================================================================
     const STORAGE_KEY = 'edulogistica_bookings_v1';
     const SETTINGS_KEY = 'edulogistica_settings_v1';
+    const LOCAL_USER_KEY = 'edulogistica_user_id_v1';
+    const SUPABASE_URL = 'https://ywfiqxcbgjepqmnfksuj.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_rw-aYbg2cy4Uej-brMeIUQ_4FjWMuUF';
+    const SUPABASE_LOGIN_FUNCTION = 'username-login';
 
     // Catálogo padrão de equipamentos com ícones Lucide
     const DEFAULT_EQUIPMENTS = [
@@ -575,6 +629,13 @@
       equipment: [],
       schoolCatalogsResetV1: false
     };
+    let supabaseClient = null;
+    let currentUser = null;
+    let cloudSyncReady = false;
+    let cloudSaveTimer = null;
+    let cloudErrorShown = false;
+    let monitorIntervalStarted = false;
+    let localAdminMode = false;
 
     // Estado dos filtros ativos
     let currentDateFilter = 'today';
@@ -660,10 +721,54 @@
       });
     }
 
+    function createDefaultSettings() {
+      return {
+        soundEnabled: true,
+        leadTimeMinutes: 15,
+        notifiedEvents: {},
+        teachers: [],
+        classes: [],
+        equipment: [],
+        schoolCatalogsResetV1: true
+      };
+    }
+
+    function persistLocalState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      if (currentUser) localStorage.setItem(LOCAL_USER_KEY, currentUser.id);
+    }
+
+    function queueCloudSave() {
+      if (!supabaseClient || !currentUser || !cloudSyncReady) return;
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(async () => {
+        try {
+          if (!currentUser || !cloudSyncReady) return;
+          const snapshot = {
+            user_id: currentUser.id,
+            bookings,
+            settings,
+            updated_at: new Date().toISOString()
+          };
+          const { error } = await supabaseClient
+            .from('edulogistica_user_data')
+            .upsert(snapshot, { onConflict: 'user_id' });
+          if (error) throw error;
+        } catch (error) {
+          console.error('Erro ao sincronizar dados com Supabase:', error);
+          if (!cloudErrorShown) {
+            showToast('Não foi possível sincronizar com o banco de dados. Os dados permanecem salvos neste aparelho.', 'error');
+            cloudErrorShown = true;
+          }
+        }
+      }, 650);
+    }
+
     function saveState() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        persistLocalState();
+        queueCloudSave();
       } catch (e) {
         showToast('Erro ao salvar no navegador. Verifique o espaço disponível.', 'error');
       }
@@ -1751,16 +1856,194 @@
         .replace(/'/g, '&#039;');
     }
 
-    // =========================================================================
-    // INICIALIZAÇÃO DA APLICAÇÃO
-    // =========================================================================
-    window.addEventListener('DOMContentLoaded', () => {
+    function setLoginStatus(message, type = 'info') {
+      const status = document.getElementById('login-status');
+      status.textContent = message;
+      const color = type === 'error' ? 'text-rose-600' : type === 'success' ? 'text-emerald-700' : type === 'warning' ? 'text-amber-700' : 'text-slate-500';
+      status.className = `min-h-5 text-xs ${color}`;
+    }
+
+    function lockApplication() {
+      cloudSyncReady = false;
+      clearTimeout(cloudSaveTimer);
+      currentUser = null;
+      localAdminMode = false;
+      bookings = [];
+      settings = createDefaultSettings();
+      document.getElementById('app-shell').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('login-form').reset();
+    }
+
+    function enterLocalAdminMode() {
+      cloudSyncReady = false;
+      clearTimeout(cloudSaveTimer);
+      currentUser = null;
+      localAdminMode = true;
+      bookings = [];
+      settings = createDefaultSettings();
       loadState();
+      persistLocalState();
+
+      document.getElementById('signed-in-user').textContent = 'Administrador local — dados deste aparelho';
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
       updateHeaderControls();
       populateTeacherOptions();
       populateClassOptions();
       renderQuickEquipmentChips();
       updateClockAndMonitor();
+      setLoginStatus('Acesso local ativado. Os dados não serão sincronizados com o Supabase.', 'success');
+
+      if (!monitorIntervalStarted) {
+        monitorIntervalStarted = true;
+        setInterval(updateClockAndMonitor, 5000);
+      }
+    }
+
+    async function activateAuthenticatedUser(user) {
+      currentUser = user;
+      cloudSyncReady = false;
+      cloudErrorShown = false;
+      setLoginStatus('Carregando seus dados…');
+
+      const { data, error } = await supabaseClient
+        .from('edulogistica_user_data')
+        .select('bookings, settings')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (error) throw new Error('Não foi possível acessar os dados no Supabase. Confira se o SQL de configuração foi aplicado.');
+
+      if (data) {
+        bookings = Array.isArray(data.bookings) ? data.bookings : [];
+        settings = { ...createDefaultSettings(), ...(data.settings || {}) };
+        normalizeSchoolCatalogs();
+      } else {
+        const localOwner = localStorage.getItem(LOCAL_USER_KEY);
+        if (!localOwner || localOwner === user.id) {
+          bookings = [];
+          settings = createDefaultSettings();
+          loadState();
+        } else {
+          bookings = [];
+          settings = createDefaultSettings();
+        }
+        normalizeSchoolCatalogs();
+        const { error: insertError } = await supabaseClient
+          .from('edulogistica_user_data')
+          .upsert({ user_id: user.id, bookings, settings, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+        if (insertError) throw new Error('Não foi possível criar o espaço de dados deste usuário. Confira as políticas do banco.');
+      }
+
+      persistLocalState();
+      cloudSyncReady = true;
+      document.getElementById('signed-in-user').textContent = user.user_metadata?.username || user.email || 'Usuário conectado';
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
+      updateHeaderControls();
+      populateTeacherOptions();
+      populateClassOptions();
+      renderQuickEquipmentChips();
+      updateClockAndMonitor();
+      setLoginStatus('Acesso realizado.', 'success');
+
+      if (!monitorIntervalStarted) {
+        monitorIntervalStarted = true;
+        setInterval(updateClockAndMonitor, 5000);
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      if (!supabaseClient) {
+        setLoginStatus('O Supabase ainda não foi configurado neste app.', 'warning');
+        return;
+      }
+
+      const username = document.getElementById('login-username').value.trim().toLocaleLowerCase('pt-BR');
+      const password = document.getElementById('login-password').value;
+      const button = document.getElementById('login-submit');
+      button.disabled = true;
+      setLoginStatus('Verificando acesso…');
+
+      try {
+        const { data, error } = await supabaseClient.functions.invoke(SUPABASE_LOGIN_FUNCTION, {
+          body: { username, password }
+        });
+        if (error || !data?.session?.access_token || !data?.session?.refresh_token) {
+          throw new Error('Usuário ou senha inválidos, ou função de login não configurada.');
+        }
+
+        const { data: authData, error: sessionError } = await supabaseClient.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        if (sessionError || !authData.user) throw new Error('Não foi possível iniciar a sessão.');
+        await activateAuthenticatedUser(authData.user);
+      } catch (error) {
+        console.error('Falha no login:', error);
+        if (supabaseClient) await supabaseClient.auth.signOut();
+        setLoginStatus(error.message || 'Não foi possível entrar. Confira o usuário e a senha.', 'error');
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function signOut() {
+      if (localAdminMode || !supabaseClient) {
+        lockApplication();
+        setLoginStatus('Acesso local encerrado.');
+        return;
+      }
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) {
+        showToast('Não foi possível encerrar a sessão.', 'error');
+        return;
+      }
+      lockApplication();
+      setLoginStatus('Sessão encerrada.');
+    }
+
+    async function initializeAuthentication() {
+      const configured = SUPABASE_URL.startsWith('https://') && !SUPABASE_PUBLISHABLE_KEY.includes('COLE_AQUI');
+      if (!configured || !window.supabase?.createClient) {
+        setLoginStatus('Configure a URL do projeto e a chave pública publishable do Supabase para ativar o login.', 'warning');
+        document.getElementById('login-submit').disabled = true;
+        lucide.createIcons();
+        return;
+      }
+
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+      supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT') lockApplication();
+      });
+
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        setLoginStatus('Não foi possível consultar a sessão do Supabase.', 'error');
+        return;
+      }
+      if (data.session?.user) {
+        try {
+          await activateAuthenticatedUser(data.session.user);
+        } catch (authError) {
+          console.error('Erro ao abrir os dados do usuário:', authError);
+          setLoginStatus(authError.message, 'error');
+          await supabaseClient.auth.signOut();
+        }
+      } else {
+        setLoginStatus('Informe seu nome de usuário e senha para entrar.');
+      }
+      lucide.createIcons();
+    }
+
+    // =========================================================================
+    // INICIALIZAÇÃO DA APLICAÇÃO
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      initializeAuthentication();
 
       if ('serviceWorker' in navigator && window.isSecureContext) {
         navigator.serviceWorker.register('./service-worker.js').catch((error) => {
