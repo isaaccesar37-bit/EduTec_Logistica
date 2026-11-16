@@ -64,6 +64,7 @@ create policy "Users can update their own EduLogistica data"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
--- Depois de criar o usuário em Authentication > Users, associe um nome de usuário:
+-- Depois de criar cada usuário em Authentication > Users, associe um username exclusivo.
+-- Repita o comando abaixo para cada conta, usando seu próprio UUID:
 -- insert into public.user_accounts (user_id, username)
 -- values ('UUID_DO_USUARIO', 'nome-de-usuario');
