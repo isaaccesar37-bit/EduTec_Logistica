@@ -288,7 +288,7 @@
         <div class="flex flex-wrap items-center gap-1.5">
           <button onclick="setStatusFilter('all')" data-status-filter="all"
             class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-brand-900 text-white border-brand-900">
-            Todos
+            Agendamentos
           </button>
           <button onclick="setStatusFilter('pending')" data-status-filter="pending"
             class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50">
@@ -300,7 +300,7 @@
           </button>
           <button onclick="setStatusFilter('completed')" data-status-filter="completed"
             class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50">
-            Concluídos
+            Devolvidos
           </button>
         </div>
       </div>
@@ -1039,7 +1039,12 @@
       let filtered = bookings.filter((b) => {
         if (currentDateFilter === 'today' && b.date !== todayISO) return false;
         if (currentDateFilter === 'tomorrow' && b.date !== tomorrowISO) return false;
-        if (currentStatusFilter !== 'all' && b.status !== currentStatusFilter) return false;
+        if (currentStatusFilter === 'completed') {
+          if (b.status !== 'completed') return false;
+        } else {
+          if (b.status === 'completed') return false;
+          if (currentStatusFilter !== 'all' && b.status !== currentStatusFilter) return false;
+        }
 
         if (currentSearchQuery.trim() !== '') {
           const q = currentSearchQuery.toLowerCase();
@@ -1069,7 +1074,7 @@
       const headingMap = {
         today: 'Linha do Tempo de Hoje',
         tomorrow: 'Agendamentos de Amanhã',
-        all: 'Todos os Agendamentos'
+        all: 'Agendamentos'
       };
       document.getElementById('timeline-heading').textContent = headingMap[currentDateFilter];
       document.getElementById('visible-count').textContent = filtered.length;
