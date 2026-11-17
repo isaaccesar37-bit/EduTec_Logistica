@@ -502,7 +502,7 @@
   <!-- MODAL: CONFIGURAÇÕES, LEMBRETES E BACKUP JSON                         -->
   <!-- ===================================================================== -->
   <div id="settings-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-slate-200">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200">
       <div class="bg-brand-900 text-white px-5 py-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <i data-lucide="sliders-horizontal" class="w-5 h-5 text-indigo-300"></i>
@@ -513,11 +513,20 @@
         </button>
       </div>
 
-      <div class="p-5 space-y-5">
+      <div class="border-b border-slate-200 bg-white px-3 py-2">
+        <div class="grid grid-cols-2 gap-1 sm:grid-cols-4" role="tablist" aria-label="Abas de configurações">
+          <button id="settings-tab-school" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-school" onclick="switchSettingsTab('school')" class="settings-tab rounded-lg px-2 py-2 text-xs font-semibold text-white bg-indigo-600">Dados da escola</button>
+          <button id="settings-tab-records" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-records" onclick="switchSettingsTab('records')" class="settings-tab rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-indigo-50">Dados cadastrados</button>
+          <button id="settings-tab-schedule" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-schedule" onclick="switchSettingsTab('schedule')" class="settings-tab rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-indigo-50">Horários dos professores</button>
+          <button id="settings-tab-other" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-other" onclick="switchSettingsTab('other')" class="settings-tab rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-indigo-50">Outros comandos</button>
+        </div>
+      </div>
+      <div class="p-5">
+        <section id="settings-panel-school" role="tabpanel" aria-labelledby="settings-tab-school" class="settings-panel space-y-3 pt-1">
         <div class="space-y-3 pt-1">
           <div>
             <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Dados da escola</h4>
-            <p class="text-xs text-slate-500 mt-1">Um nome por linha. As alterações são salvas automaticamente neste navegador.</p>
+            <p class="text-xs text-slate-500 mt-1">Um nome por linha. As alterações são salvas automaticamente nesta conta e neste aparelho.</p>
           </div>
           <div>
             <label for="setting-teachers" class="block text-xs font-semibold text-slate-700 mb-1">Professores</label>
@@ -533,14 +542,15 @@
           </div>
           <p id="school-data-save-status" class="text-[11px] text-emerald-700" aria-live="polite">Dados salvos neste navegador.</p>
         </div>
-        <section class="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-3" aria-label="Dados cadastrados">
+        </section>
+        <section id="settings-panel-records" role="tabpanel" aria-labelledby="settings-tab-records" class="settings-panel hidden rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-3" aria-label="Dados cadastrados">
           <div>
             <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Dados cadastrados</h4>
             <p class="text-xs text-slate-500 mt-1">Consulte as listas e exclua um item individualmente quando necessário.</p>
           </div>
           <div id="school-data-list" class="space-y-3"></div>
         </section>
-        <section class="rounded-xl border border-indigo-200 bg-indigo-50/50 p-3.5 space-y-3" aria-label="Horários dos professores">
+        <section id="settings-panel-schedule" role="tabpanel" aria-labelledby="settings-tab-schedule" class="settings-panel hidden rounded-xl border border-indigo-200 bg-indigo-50/50 p-3.5 space-y-3" aria-label="Horários dos professores">
           <div>
             <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Horários dos professores</h4>
             <p class="text-xs text-slate-500 mt-1">Cadastre professores e ajuste as turmas, os dias e os horários. As mudanças ficam salvas nas configurações desta conta.</p>
@@ -567,6 +577,7 @@
           <div id="professor-schedule-editor" class="max-h-72 space-y-2 overflow-y-auto border-t border-indigo-100 pt-3"></div>
           <p id="professor-schedule-status" class="text-[11px] text-emerald-700" aria-live="polite"></p>
         </section>
+        <section id="settings-panel-other" role="tabpanel" aria-labelledby="settings-tab-other" class="settings-panel hidden space-y-5">
         <div class="border-t border-slate-200"></div>
         <!-- Antecedência do Alerta -->
         <div>
@@ -635,6 +646,7 @@
             Fechar
           </button>
         </div>
+        </section>
       </div>
     </div>
   </div>
@@ -2099,12 +2111,27 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
     }
 
     function openSettingsModal() {
+      switchSettingsTab('school');
       populateSchoolDataFields();
       populateProfessorScheduleEditor();
       const modal = document.getElementById('settings-modal');
       modal.classList.remove('hidden');
       modal.classList.add('flex');
       lucide.createIcons();
+    }
+
+    function switchSettingsTab(tab) {
+      const validTabs = ['school', 'records', 'schedule', 'other'];
+      if (!validTabs.includes(tab)) tab = 'school';
+      validTabs.forEach(name => {
+        const button = document.getElementById('settings-tab-' + name);
+        const panel = document.getElementById('settings-panel-' + name);
+        const selected = name === tab;
+        button.setAttribute('aria-selected', String(selected));
+        button.className = 'settings-tab rounded-lg px-2 py-2 text-xs font-semibold transition ' +
+          (selected ? 'text-white bg-indigo-600' : 'text-slate-600 hover:bg-indigo-50');
+        panel.classList.toggle('hidden', !selected);
+      });
     }
 
     function closeSettingsModal() {
