@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>LembretesEduTec — Controle de Equipamentos</title>
+  <title>EduLogística — Controle de Equipamentos</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter -->
@@ -80,7 +80,7 @@
       <div class="flex items-center gap-3 mb-6">
         <div class="rounded-xl bg-indigo-100 p-3 text-indigo-700"><i data-lucide="laptop-2" class="h-6 w-6"></i></div>
         <div>
-          <h1 class="text-xl font-extrabold text-slate-900">LembretesEduTec</h1>
+          <h1 class="text-xl font-extrabold text-slate-900">EduLogística</h1>
           <p id="login-subtitle" class="text-xs text-slate-500">Acesse sua conta para continuar</p>
         </div>
       </div>
@@ -156,7 +156,7 @@
           </div>
           <div>
             <h1 class="text-lg sm:text-xl font-bold tracking-tight leading-tight flex items-center gap-2">
-              LembretesEduTec
+              EduLogística
               <span class="hidden sm:inline-block text-[11px] font-semibold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/20">
                 Tecnologia Educacional
               </span>
@@ -190,13 +190,6 @@
             <i data-lucide="settings" class="w-4 h-4"></i>
           </button>
 
-          <!-- Encerrar a sessão para conectar outra conta -->
-          <button type="button" onclick="signOut()" title="Sair da conta" aria-label="Sair da conta"
-            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-white/10 hover:bg-white/20 transition border border-white/10 text-indigo-100">
-            <i data-lucide="log-out" class="w-4 h-4"></i>
-            <span class="hidden sm:inline">Sair</span>
-          </button>
-
           <!-- Botão Principal: Lembrete -->
           <button onclick="openBookingModal()"
             class="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 active:scale-[0.98] text-white font-semibold px-4 py-2 rounded-xl shadow-md shadow-indigo-950/40 transition text-sm">
@@ -208,8 +201,15 @@
     </div>
   </header>
 
+  <nav class="bg-white border-b border-slate-200 shadow-sm" aria-label="Seções principais">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-2 py-2">
+      <button id="tab-reminders" type="button" onclick="switchAppTab('reminders')" aria-selected="true" class="app-tab rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-600 text-white transition"><i data-lucide="bell" class="inline-block w-4 h-4 mr-1.5 align-[-3px]"></i>Lembretes</button>
+      <button id="tab-professor" type="button" onclick="switchAppTab('professor')" aria-selected="false" class="app-tab rounded-xl px-4 py-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 transition"><i data-lucide="map-pin" class="inline-block w-4 h-4 mr-1.5 align-[-3px]"></i>Professor</button>
+    </div>
+  </nav>
+
   <!-- Conteúdo Principal -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+  <main id="reminders-view" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     <!-- Cards de Resumo Rápido (KPIs) -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" aria-label="Resumo do dia">
@@ -288,7 +288,7 @@
         <div class="flex flex-wrap items-center gap-1.5">
           <button onclick="setStatusFilter('all')" data-status-filter="all"
             class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-brand-900 text-white border-brand-900">
-            Agendamentos
+            Todos
           </button>
           <button onclick="setStatusFilter('pending')" data-status-filter="pending"
             class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50">
@@ -300,7 +300,7 @@
           </button>
           <button onclick="setStatusFilter('completed')" data-status-filter="completed"
             class="status-filter-btn px-3 py-1.5 rounded-xl text-xs font-semibold border transition bg-white text-slate-600 border-slate-200 hover:bg-slate-50">
-            Devolvidos
+            Concluídos
           </button>
         </div>
       </div>
@@ -350,10 +350,26 @@
     </section>
   </main>
 
+  <main id="professor-view" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" aria-labelledby="professor-heading">
+    <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-5">
+      <div class="flex items-start gap-3"><div class="w-11 h-11 shrink-0 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><i data-lucide="map-pin" class="w-5 h-5"></i></div><div><h2 id="professor-heading" class="text-lg font-bold text-slate-900">Localizador de professores</h2><p class="text-sm text-slate-500 mt-1">Escolha um professor, o dia e o horário para localizar a turma.</p></div></div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div><label for="professor-select" class="block text-xs font-semibold text-slate-700 mb-1.5">Professor(a)</label><select id="professor-select" onchange="renderProfessorLocator()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="">Selecione um professor</option></select></div>
+        <div><label for="professor-day" class="block text-xs font-semibold text-slate-700 mb-1.5">Dia da semana</label><select id="professor-day" onchange="renderProfessorLocator()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select></div>
+        <div><label for="professor-time" class="block text-xs font-semibold text-slate-700 mb-1.5">Horário</label><select id="professor-time" onchange="renderProfessorLocator()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select></div>
+      </div>
+    </section>
+    <section id="professor-current-location" aria-live="polite"></section>
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2"><div><h3 class="font-bold text-slate-900">Outros horários deste dia</h3><p id="professor-day-summary" class="text-xs text-slate-500 mt-1">Selecione um professor para consultar a agenda.</p></div><span class="text-[11px] rounded-full bg-slate-100 text-slate-600 px-2.5 py-1">Horário escolar 2026</span></div>
+      <div id="professor-day-list" class="p-3 sm:p-4 space-y-2"></div>
+    </section>
+  </main>
+
   <!-- Rodapé -->
   <footer class="bg-white border-t border-slate-200 py-4 mt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-      <p>LembretesEduTec — Assistente pessoal para entrega e recolhimento de equipamentos escolares.</p>
+      <p>EduLogística — Assistente pessoal para entrega e recolhimento de equipamentos escolares.</p>
       <p>Dados salvos localmente no seu navegador.</p>
     </div>
   </footer>
@@ -642,6 +658,27 @@
       measurementId: 'G-WWDJXKJ2FZ'
     };
 
+const PROFESSOR_SCHEDULE_TEACHERS = ["Alexandra", "Alexandro", "Ana Carolina", "Cristiane", "Daiane", "David", "D\u00e9bora", "Eduardo", "Elianete", "Elizandra", "Eusliele", "Gabriel", "Glaucilene", "Helbert", "Italo", "Juan Carlos", "Juliana", "Leize", "Madalena", "Marina C\u00e2ndida", "Marina Figueiredo", "Modesta", "M\u00f4nica", "Ricardo", "Wagner"];
+const PROFESSOR_SCHEDULE_CLASSES = ["6\u00ba Ano A", "6\u00ba Ano B", "7\u00ba Ano A", "8\u00ba Ano A", "8\u00ba Ano B", "9\u00ba Ano A", "9\u00ba Ano B", "1\u00aa Alfa A", "1\u00aa Alfa B", "1\u00aa Beta", "2\u00aa Alfa", "2\u00aa Beta", "3\u00aa Alfa B", "3\u00aa Beta", "3\u00aa Alfa A"];
+const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:6,14:7,20:8,23:9,4:10,15:11,8:12,7:13,3:14\n0|07:50-08:40|24:0,10:1,22:2,13:3,20:4,11:5,16:6,14:7,3:8,23:9,15:10,19:11,7:12,4:13,8:14\n0|08:40-09:30|23:0,22:1,4:2,13:3,16:4,7:5,20:6,11:7,14:8,10:9,19:10,8:11,3:12,15:13,24:14\n0|09:30-09:50|\n0|09:50-10:40|23:0,22:1,10:2,20:3,11:4,16:5,13:6,19:7,24:8,15:9,14:10,7:11,3:12,4:13,8:14\n0|10:40-11:30|22:0,23:1,10:2,20:3,11:4,16:5,19:6,24:7,7:8,13:9,3:10,15:11,14:12,4:13,8:14\n0|11:30-12:20|22:0,23:1,24:2,16:3,14:4,20:5,19:6,7:7,10:8,13:9,8:10,15:11,11:12,3:13,4:14\n0|13:30-14:20|15:12,14:13,4:14\n0|14:20-15:10|14:12,23:13,15:14\n0|15:10-16:00|15:12,23:13,4:14\n0|16:00-16:20|\n0|16:20-17:10|4:12,23:13,14:14\n1|07:00-07:50|10:0,23:1,2:2,20:3,14:4,1:5,19:6,12:7,4:8,3:9,11:10,15:11,0:12,5:13,6:14\n1|07:50-08:40|10:0,23:1,2:2,1:3,14:4,19:5,20:6,0:7,4:8,15:9,3:10,11:11,12:12,5:13,6:14\n1|08:40-09:30|23:0,2:1,1:2,14:3,11:4,19:5,20:6,10:7,5:8,9:9,6:10,3:11,0:12,12:13,15:14\n1|09:30-09:50|\n1|09:50-10:40|2:0,1:1,23:2,14:3,11:4,20:5,19:6,5:7,12:8,6:9,3:10,9:11,15:12,10:13,0:14\n1|10:40-11:30|2:0,12:1,23:2,11:3,20:4,9:5,10:6,3:7,19:8,1:9,0:10,15:11,6:12,14:13,5:14\n1|11:30-12:20|11:3,20:4,9:5,10:6,19:7,12:8,23:9,15:10,0:11,3:12,6:13,5:14\n1|13:30-14:20|20:7,6:8,0:9,12:10,19:11\n1|14:20-15:10|6:7,14:8,16:9,5:10,0:11\n1|15:10-16:00|20:7,16:8,14:9,5:10,12:11\n1|16:00-16:20|\n1|16:20-17:10|5:7,20:8,16:9,14:10,12:11\n2|07:00-07:50|22:0,21:1,17:2,13:3,4:4,19:5,20:6,0:7,1:8,23:9,6:10,12:11,15:12,18:13,7:14\n2|07:50-08:40|17:0,22:1,21:2,20:3,4:4,13:5,1:6,12:7,0:8,23:9,7:10,10:11,15:12,18:13,6:14\n2|08:40-09:30|17:0,21:1,22:2,20:3,13:4,7:5,19:6,1:7,12:8,0:9,10:10,23:11,6:12,15:13,24:14\n2|09:30-09:50|\n2|09:50-10:40|21:0,4:1,23:2,12:3,11:4,19:5,13:6,20:7,0:8,7:9,6:10,18:11,10:12,1:13,15:14\n2|10:40-11:30|21:0,24:1,23:2,10:3,12:4,20:5,7:6,6:7,11:8,19:9,15:10,18:11,4:12,0:13,1:14\n2|11:30-12:20|10:3,20:4,11:5,7:6,6:7,24:8,19:9,0:10,15:11,4:12,23:13,12:14\n2|13:30-14:20|7:12,0:13,16:14\n2|14:20-15:10|16:12,7:13,0:14\n2|15:10-16:00|7:12,11:13,16:14\n2|16:00-16:20|\n2|16:20-17:10|16:12,11:13,10:14\n3|07:00-07:50|4:0,24:1,17:2,11:3,2:4,20:5,13:6,7:7,3:8,9:9,1:10,8:11,6:12,23:13,15:14\n3|07:50-08:40|23:0,17:1,24:2,4:3,2:4,20:5,9:6,3:7,6:8,7:9,13:10,1:11,8:12,11:13,15:14\n3|08:40-09:30|2:0,17:1,24:2,4:3,1:4,10:5,9:6,20:7,6:8,7:9,13:10,23:11,8:12,15:13,3:14\n3|09:30-09:50|\n3|09:50-10:40|24:0,23:1,21:2,2:3,13:4,10:5,7:6,4:7,3:8,8:9,9:10,6:11,1:12,15:13,11:14\n3|10:40-11:30|1:0,23:1,21:2,2:3,10:4,13:5,20:6,4:7,7:8,3:9,15:10,6:11,8:12,24:13,11:14\n3|11:30-12:20|20:3,10:4,13:5,11:6,21:7,7:8,6:9,15:10,4:11,3:12,24:13,8:14\n3|13:30-14:20|11:7,21:8,8:9,7:10,15:11\n3|14:20-15:10|16:7,11:8,21:9,3:10,7:11\n3|15:10-16:00|16:7,4:9,11:10,7:11\n3|16:00-16:20|\n3|16:20-17:10|20:7,16:8,4:9,8:10,11:11\n4|07:00-07:50|12:0,21:1,23:2,2:3,11:4,20:5,16:6,24:7,6:8,3:9,9:10,19:11,5:12,7:13,14:14\n4|07:50-08:40|21:0,2:1,23:2,16:3,20:4,7:5,11:6,12:7,14:8,24:9,9:10,19:11,5:12,6:13,3:14\n4|08:40-09:30|21:0,2:1,12:2,16:3,20:4,19:5,9:6,14:7,5:8,24:9,7:10,3:11,11:12,23:13,6:14\n4|09:30-09:50|\n4|09:50-10:40|23:0,24:1,21:2,14:3,2:4,16:5,19:6,7:7,20:8,12:9,9:10,5:11,6:12,11:13,3:14\n4|10:40-11:30|23:0,21:1,2:2,11:3,16:4,9:5,12:6,6:7,20:8,14:9,19:10,5:11,24:12,3:13,7:14\n4|11:30-12:20|11:3,16:4,12:5,20:6,3:7,19:8,14:9,6:10,9:11,24:12,23:13,7:14\n4|13:30-14:20|\n4|14:20-15:10|\n4|15:10-16:00|\n4|16:00-16:20|\n4|16:20-17:10|`;
+    const PROFESSOR_SCHEDULE_DAYS = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira'];
+    const PROFESSOR_TIME_OPTIONS = [
+      '07:00-07:50', '07:50-08:40', '08:40-09:30', '09:30-09:50',
+      '09:50-10:40', '10:40-11:30', '11:30-12:20', '12:20-13:30',
+      '13:30-14:20', '14:20-15:10', '15:10-16:00', '16:00-16:20', '16:20-17:10'
+    ];
+    const PROFESSOR_SCHEDULE_SLOTS = PROFESSOR_SCHEDULE_ROWS.split(/\r?\n/).filter(Boolean).map(line => {
+      const [day, time, list = ''] = line.split('|');
+      return {
+        day: Number(day),
+        time,
+        entries: list ? list.split(',').map(pair => {
+          const [teacherIndex, classIndex] = pair.split(':').map(Number);
+          return { teacher: PROFESSOR_SCHEDULE_TEACHERS[teacherIndex], className: PROFESSOR_SCHEDULE_CLASSES[classIndex] };
+        }) : []
+      };
+    });
+
     // Permite importar um cache deste aparelho somente para a conta antiga correspondente.
     const LEGACY_SUPABASE_ACCOUNT_EMAILS = {
       '626574ee-4275-49f6-bf9b-cf8856130f88': 'isaaccesar37@gmail.com'
@@ -867,7 +904,7 @@
         return;
       }
       if (Notification.permission === 'granted') {
-        new Notification('LembretesEduTec', {
+        new Notification('EduLogística', {
           body: 'As notificações já estão ativas neste dispositivo!'
         });
         updateHeaderControls();
@@ -877,7 +914,7 @@
         updateHeaderControls();
         if (perm === 'granted') {
           showToast('Notificações do navegador ativadas!', 'success');
-          new Notification('LembretesEduTec Ativado', {
+          new Notification('EduLogística Ativado', {
             body: 'Você será avisado antes das entregas e recolhimentos.'
           });
         } else {
@@ -946,6 +983,114 @@
 
       checkRemindersAndUrgencies(now);
       renderAll();
+    }
+
+    function switchAppTab(tab) {
+      const showProfessor = tab === 'professor';
+      document.getElementById('reminders-view').classList.toggle('hidden', showProfessor);
+      document.getElementById('professor-view').classList.toggle('hidden', !showProfessor);
+      const remindersTab = document.getElementById('tab-reminders');
+      const professorTab = document.getElementById('tab-professor');
+      remindersTab.setAttribute('aria-selected', String(!showProfessor));
+      professorTab.setAttribute('aria-selected', String(showProfessor));
+      remindersTab.className = 'app-tab rounded-xl px-4 py-2 text-sm font-semibold transition ' +
+        (showProfessor ? 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700' : 'bg-indigo-600 text-white');
+      professorTab.className = 'app-tab rounded-xl px-4 py-2 text-sm font-semibold transition ' +
+        (showProfessor ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700');
+      if (showProfessor) renderProfessorLocator();
+      lucide.createIcons();
+    }
+
+    function formatProfessorTime(time) {
+      return time.replace('-', ' às ');
+    }
+
+    function initializeProfessorLocator() {
+      const teacherSelect = document.getElementById('professor-select');
+      const daySelect = document.getElementById('professor-day');
+      const timeSelect = document.getElementById('professor-time');
+      teacherSelect.innerHTML += PROFESSOR_SCHEDULE_TEACHERS
+        .map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('');
+      daySelect.innerHTML = PROFESSOR_SCHEDULE_DAYS
+        .map((name, index) => '<option value="' + index + '">' + name + '</option>').join('');
+      timeSelect.innerHTML = PROFESSOR_TIME_OPTIONS.map(time => {
+        let note = '';
+        if (time === '09:30-09:50' || time === '16:00-16:20') note = ' · Intervalo';
+        if (time === '12:20-13:30') note = ' · Almoço';
+        return '<option value="' + time + '">' + formatProfessorTime(time) + note + '</option>';
+      }).join('');
+
+      const weekday = new Date().getDay();
+      daySelect.value = String(weekday >= 1 && weekday <= 5 ? weekday - 1 : 0);
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const currentTime = PROFESSOR_TIME_OPTIONS.find(time => {
+        const [start, end] = time.split('-').map(value => {
+          const [hours, minutes] = value.split(':').map(Number);
+          return hours * 60 + minutes;
+        });
+        return currentMinutes >= start && currentMinutes < end;
+      });
+      if (currentTime) timeSelect.value = currentTime;
+      renderProfessorLocator();
+    }
+
+    function renderProfessorLocator() {
+      const teacher = document.getElementById('professor-select')?.value || '';
+      const day = Number(document.getElementById('professor-day')?.value || 0);
+      const time = document.getElementById('professor-time')?.value || '';
+      const currentContainer = document.getElementById('professor-current-location');
+      const dayList = document.getElementById('professor-day-list');
+      const summary = document.getElementById('professor-day-summary');
+      if (!currentContainer || !dayList || !summary) return;
+
+      if (!teacher) {
+        currentContainer.innerHTML = '<div class="rounded-2xl border border-dashed border-indigo-300 bg-indigo-50/70 p-5 text-sm text-indigo-900">Selecione um professor para ver a turma neste horário e os demais horários do dia.</div>';
+        dayList.innerHTML = '<p class="text-sm text-slate-500 text-center py-5">A agenda do dia aparecerá aqui.</p>';
+        summary.textContent = 'Selecione um professor para consultar a agenda.';
+        return;
+      }
+
+      const selectedSlot = PROFESSOR_SCHEDULE_SLOTS.find(slot => slot.day === day && slot.time === time);
+      const currentEntries = (selectedSlot?.entries || []).filter(entry => entry.teacher === teacher);
+      const isInterval = time === '09:30-09:50' || time === '16:00-16:20';
+      const isLunch = time === '12:20-13:30';
+      const statusText = isInterval ? 'Este horário corresponde ao intervalo.' :
+        isLunch ? 'Este horário corresponde ao almoço.' :
+        'Não há aula desse professor nesta faixa de horário.';
+      currentContainer.innerHTML = '<div class="rounded-2xl border-2 border-indigo-400 bg-indigo-50 p-5 sm:p-6 shadow-sm">' +
+        '<p class="text-xs font-bold uppercase tracking-wide text-indigo-700">Localização no horário selecionado · ' +
+          escapeHTML(PROFESSOR_SCHEDULE_DAYS[day]) + ' · ' + escapeHTML(formatProfessorTime(time)) + '</p>' +
+        '<h3 class="text-xl font-extrabold text-slate-900 mt-2">' + escapeHTML(teacher) + '</h3>' +
+        (currentEntries.length
+          ? '<div class="mt-4 flex flex-wrap gap-2">' + currentEntries.map(entry =>
+              '<span class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-white font-bold shadow-sm">' +
+                '<i data-lucide="door-open" class="w-4 h-4"></i>' + escapeHTML(entry.className) + '</span>'
+            ).join('') + '</div>'
+          : '<p class="mt-3 text-sm text-indigo-900">' + statusText + '</p>') +
+        '</div>';
+
+      const dayEntries = PROFESSOR_SCHEDULE_SLOTS
+        .filter(slot => slot.day === day)
+        .flatMap(slot => slot.entries.filter(entry => entry.teacher === teacher)
+          .map(entry => ({ time: slot.time, className: entry.className })));
+      summary.textContent = dayEntries.length
+        ? dayEntries.length + (dayEntries.length === 1 ? ' aula registrada' : ' aulas registradas') + ' para ' + teacher + ' na ' + PROFESSOR_SCHEDULE_DAYS[day] + '.'
+        : 'Não há aulas registradas para este professor neste dia.';
+      dayList.innerHTML = dayEntries.length
+        ? dayEntries.map(entry => {
+            const selected = entry.time === time;
+            return '<div class="flex flex-wrap items-center gap-3 rounded-xl border px-3.5 py-3 ' +
+              (selected ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-slate-50/70') + '">' +
+              '<span class="min-w-28 text-xs font-bold ' + (selected ? 'text-indigo-700' : 'text-slate-500') + '">' +
+                escapeHTML(formatProfessorTime(entry.time)) + '</span>' +
+              '<span class="text-sm font-semibold ' + (selected ? 'text-indigo-900' : 'text-slate-700') + '">' +
+                escapeHTML(entry.className) + '</span>' +
+              (selected ? '<span class="ml-auto rounded-full bg-indigo-100 px-2 py-1 text-[10px] font-bold text-indigo-700">Horário selecionado</span>' : '') +
+              '</div>';
+          }).join('')
+        : '<p class="text-sm text-slate-500 text-center py-5">Nenhuma aula encontrada para este professor neste dia.</p>';
+      lucide.createIcons();
     }
 
     function checkRemindersAndUrgencies(now) {
@@ -1035,16 +1180,12 @@
       renderNextActionCard(now);
 
       // 3. Filtrar lista principal
+      if (!document.getElementById('professor-view').classList.contains('hidden')) renderProfessorLocator();
       const tomorrowISO = getTomorrowISO();
       let filtered = bookings.filter((b) => {
         if (currentDateFilter === 'today' && b.date !== todayISO) return false;
         if (currentDateFilter === 'tomorrow' && b.date !== tomorrowISO) return false;
-        if (currentStatusFilter === 'completed') {
-          if (b.status !== 'completed') return false;
-        } else {
-          if (b.status === 'completed') return false;
-          if (currentStatusFilter !== 'all' && b.status !== currentStatusFilter) return false;
-        }
+        if (currentStatusFilter !== 'all' && b.status !== currentStatusFilter) return false;
 
         if (currentSearchQuery.trim() !== '') {
           const q = currentSearchQuery.toLowerCase();
@@ -1074,7 +1215,7 @@
       const headingMap = {
         today: 'Linha do Tempo de Hoje',
         tomorrow: 'Agendamentos de Amanhã',
-        all: 'Agendamentos'
+        all: 'Todos os Agendamentos'
       };
       document.getElementById('timeline-heading').textContent = headingMap[currentDateFilter];
       document.getElementById('visible-count').textContent = filtered.length;
@@ -2133,6 +2274,7 @@
     // INICIALIZAÇÃO DA APLICAÇÃO
     // =========================================================================
     window.addEventListener('DOMContentLoaded', () => {
+      initializeProfessorLocator();
       initializeAuthentication();
 
       if ('serviceWorker' in navigator && window.isSecureContext) {
