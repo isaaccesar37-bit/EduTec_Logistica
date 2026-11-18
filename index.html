@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <title>EduLogística — Controle de Equipamentos</title>
+  <title>LembretesEduTec — Lembretes escolares</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter -->
@@ -78,9 +78,9 @@
   <section id="login-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-brand-900 px-4 py-8">
     <div class="w-full max-w-sm rounded-2xl bg-white p-6 sm:p-8 shadow-2xl">
       <div class="flex items-center gap-3 mb-6">
-        <div class="rounded-xl bg-indigo-100 p-3 text-indigo-700"><i data-lucide="laptop-2" class="h-6 w-6"></i></div>
+        <img src="icons/icon-192.png" alt="" class="h-12 w-12 rounded-xl object-contain" />
         <div>
-          <h1 class="text-xl font-extrabold text-slate-900">EduLogística</h1>
+          <h1 class="text-xl font-extrabold text-slate-900">LembretesEduTec</h1>
           <p id="login-subtitle" class="text-xs text-slate-500">Acesse sua conta para continuar</p>
         </div>
       </div>
@@ -152,11 +152,11 @@
         <!-- Logo e Título -->
         <div class="flex items-center gap-3">
           <div class="bg-indigo-500/20 border border-indigo-400/30 p-2.5 rounded-xl">
-            <i data-lucide="laptop-2" class="w-6 h-6 text-indigo-300"></i>
+            <img src="icons/icon-192.png" alt="" class="w-8 h-8 rounded-lg object-contain" />
           </div>
           <div>
             <h1 class="text-lg sm:text-xl font-bold tracking-tight leading-tight flex items-center gap-2">
-              EduLogística
+              LembretesEduTec
               <span class="hidden sm:inline-block text-[11px] font-semibold uppercase tracking-wider bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/20">
                 Tecnologia Educacional
               </span>
@@ -352,11 +352,11 @@
 
   <main id="professor-view" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" aria-labelledby="professor-heading">
     <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-5">
-      <div class="flex items-start gap-3"><div class="w-11 h-11 shrink-0 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><i data-lucide="map-pin" class="w-5 h-5"></i></div><div><h2 id="professor-heading" class="text-lg font-bold text-slate-900">Localizador de professores</h2><p class="text-sm text-slate-500 mt-1">Escolha um professor, o dia e o horário para localizar a turma.</p></div></div>
+      <div class="flex flex-wrap items-start justify-between gap-3"><div class="flex items-start gap-3"><div class="w-11 h-11 shrink-0 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><i data-lucide="map-pin" class="w-5 h-5"></i></div><div><h2 id="professor-heading" class="text-lg font-bold text-slate-900">Localizador de professores</h2><p class="text-sm text-slate-500 mt-1">Acompanhe a turma do professor no horário atual ou consulte outra faixa.</p></div></div><button id="professor-now-button" type="button" onclick="followCurrentProfessorSchedule()" class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"><i data-lucide="clock-3" class="h-4 w-4"></i><span>Seguindo horário atual</span></button></div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div><label for="professor-select" class="block text-xs font-semibold text-slate-700 mb-1.5">Professor(a)</label><select id="professor-select" onchange="renderProfessorLocator()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="">Selecione um professor</option></select></div>
-        <div><label for="professor-day" class="block text-xs font-semibold text-slate-700 mb-1.5">Dia da semana</label><select id="professor-day" onchange="renderProfessorLocator()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select></div>
-        <div><label for="professor-time" class="block text-xs font-semibold text-slate-700 mb-1.5">Horário</label><select id="professor-time" onchange="renderProfessorLocator()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select></div>
+        <div><label for="professor-day" class="block text-xs font-semibold text-slate-700 mb-1.5">Dia da semana</label><select id="professor-day" onchange="handleProfessorScheduleSelection()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select></div>
+        <div><label for="professor-time" class="block text-xs font-semibold text-slate-700 mb-1.5">Horário</label><select id="professor-time" onchange="handleProfessorScheduleSelection()" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select></div>
       </div>
     </section>
     <section id="professor-current-location" aria-live="polite"></section>
@@ -369,7 +369,7 @@
   <!-- Rodapé -->
   <footer class="bg-white border-t border-slate-200 py-4 mt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-      <p>EduLogística — Assistente pessoal para entrega e recolhimento de equipamentos escolares.</p>
+      <p>LembretesEduTec — Assistente pessoal para entrega e recolhimento de equipamentos escolares.</p>
       <p>Dados salvos localmente no seu navegador.</p>
     </div>
   </footer>
@@ -765,6 +765,8 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
     };
     let firebaseAuth = null;
     let firebaseDb = null;
+    let professorLocatorFollowsCurrent = true;
+    let professorScheduleIsWeekend = false;
     let currentUser = null;
     let cloudSyncReady = false;
     let cloudSaveTimer = null;
@@ -974,7 +976,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         return;
       }
       if (Notification.permission === 'granted') {
-        new Notification('EduLogística', {
+        new Notification('LembretesEduTec', {
           body: 'As notificações já estão ativas neste dispositivo!'
         });
         updateHeaderControls();
@@ -984,7 +986,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         updateHeaderControls();
         if (perm === 'granted') {
           showToast('Notificações do navegador ativadas!', 'success');
-          new Notification('EduLogística Ativado', {
+          new Notification('LembretesEduTec Ativado', {
             body: 'Você será avisado antes das entregas e recolhimentos.'
           });
         } else {
@@ -1067,12 +1069,51 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         (showProfessor ? 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700' : 'bg-indigo-600 text-white');
       professorTab.className = 'app-tab rounded-xl px-4 py-2 text-sm font-semibold transition ' +
         (showProfessor ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700');
-      if (showProfessor) renderProfessorLocator();
+      if (showProfessor) {
+        if (professorLocatorFollowsCurrent) updateProfessorLocatorTime();
+        else renderProfessorLocator();
+      }
       lucide.createIcons();
     }
 
     function formatProfessorTime(time) {
       return time.replace('-', ' às ');
+    }
+
+    function updateProfessorLocatorTime(now = new Date()) {
+      const daySelect = document.getElementById('professor-day');
+      const timeSelect = document.getElementById('professor-time');
+      if (!daySelect || !timeSelect) return;
+
+      const weekday = now.getDay();
+      professorScheduleIsWeekend = weekday === 0 || weekday === 6;
+      daySelect.value = String(professorScheduleIsWeekend ? 0 : weekday - 1);
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const currentTime = PROFESSOR_TIME_OPTIONS.find(time => {
+        const [start, end] = time.split('-').map(value => {
+          const [hours, minutes] = value.split(':').map(Number);
+          return hours * 60 + minutes;
+        });
+        return currentMinutes >= start && currentMinutes < end;
+      });
+      timeSelect.value = currentTime || '';
+      renderProfessorLocator();
+    }
+
+    function handleProfessorScheduleSelection() {
+      professorLocatorFollowsCurrent = false;
+      professorScheduleIsWeekend = false;
+      const label = document.querySelector('#professor-now-button span');
+      if (label) label.textContent = 'Ir para o horário atual';
+      renderProfessorLocator();
+    }
+
+    function followCurrentProfessorSchedule() {
+      professorLocatorFollowsCurrent = true;
+      professorScheduleIsWeekend = false;
+      const label = document.querySelector('#professor-now-button span');
+      if (label) label.textContent = 'Seguindo horário atual';
+      updateProfessorLocatorTime();
     }
 
     function initializeProfessorLocator() {
@@ -1083,26 +1124,14 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         .map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('');
       daySelect.innerHTML = PROFESSOR_SCHEDULE_DAYS
         .map((name, index) => '<option value="' + index + '">' + name + '</option>').join('');
-      timeSelect.innerHTML = PROFESSOR_TIME_OPTIONS.map(time => {
+      timeSelect.innerHTML = '<option value="">Fora do horário escolar</option>' + PROFESSOR_TIME_OPTIONS.map(time => {
         let note = '';
         if (time === '09:30-09:50' || time === '16:00-16:20') note = ' · Intervalo';
         if (time === '12:20-13:30') note = ' · Almoço';
         return '<option value="' + time + '">' + formatProfessorTime(time) + note + '</option>';
       }).join('');
 
-      const weekday = new Date().getDay();
-      daySelect.value = String(weekday >= 1 && weekday <= 5 ? weekday - 1 : 0);
-      const now = new Date();
-      const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const currentTime = PROFESSOR_TIME_OPTIONS.find(time => {
-        const [start, end] = time.split('-').map(value => {
-          const [hours, minutes] = value.split(':').map(Number);
-          return hours * 60 + minutes;
-        });
-        return currentMinutes >= start && currentMinutes < end;
-      });
-      if (currentTime) timeSelect.value = currentTime;
-      renderProfessorLocator();
+      updateProfessorLocatorTime();
     }
 
     function refreshProfessorLocatorOptions() {
@@ -1261,12 +1290,15 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       const currentEntries = (selectedSlot?.entries || []).filter(entry => entry.teacher === teacher);
       const isInterval = time === '09:30-09:50' || time === '16:00-16:20';
       const isLunch = time === '12:20-13:30';
+      const dayLabel = professorScheduleIsWeekend && professorLocatorFollowsCurrent
+        ? 'Fim de semana'
+        : PROFESSOR_SCHEDULE_DAYS[day];
       const statusText = isInterval ? 'Este horário corresponde ao intervalo.' :
         isLunch ? 'Este horário corresponde ao almoço.' :
         'Não há aula desse professor nesta faixa de horário.';
       currentContainer.innerHTML = '<div class="rounded-2xl border-2 border-indigo-400 bg-indigo-50 p-5 sm:p-6 shadow-sm">' +
         '<p class="text-xs font-bold uppercase tracking-wide text-indigo-700">Localização no horário selecionado · ' +
-          escapeHTML(PROFESSOR_SCHEDULE_DAYS[day]) + ' · ' + escapeHTML(formatProfessorTime(time)) + '</p>' +
+          escapeHTML(dayLabel) + ' · ' + escapeHTML(time ? formatProfessorTime(time) : 'Fora do horário escolar') + '</p>' +
         '<h3 class="text-xl font-extrabold text-slate-900 mt-2">' + escapeHTML(teacher) + '</h3>' +
         (currentEntries.length
           ? '<div class="mt-4 flex flex-wrap gap-2">' + currentEntries.map(entry =>
@@ -1280,7 +1312,9 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         .filter(slot => slot.day === day)
         .flatMap(slot => slot.entries.filter(entry => entry.teacher === teacher)
           .map(entry => ({ time: slot.time, className: entry.className })));
-      summary.textContent = dayEntries.length
+      summary.textContent = professorScheduleIsWeekend && professorLocatorFollowsCurrent
+        ? 'Hoje não há horário escolar. O localizador automático retoma na segunda-feira.'
+        : dayEntries.length
         ? dayEntries.length + (dayEntries.length === 1 ? ' aula registrada' : ' aulas registradas') + ' para ' + teacher + ' na ' + PROFESSOR_SCHEDULE_DAYS[day] + '.'
         : 'Não há aulas registradas para este professor neste dia.';
       dayList.innerHTML = dayEntries.length
@@ -2507,13 +2541,25 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       initializeAuthentication();
 
       if ('serviceWorker' in navigator && window.isSecureContext) {
-        navigator.serviceWorker.register('./service-worker.js').catch((error) => {
-          console.warn('Não foi possível ativar o modo de instalação/offline:', error);
+        let refreshingForUpdate = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (refreshingForUpdate) return;
+          refreshingForUpdate = true;
+          window.location.reload();
         });
+        navigator.serviceWorker.register('./service-worker.js', { updateViaCache: 'none' })
+          .then(registration => registration.update())
+          .catch((error) => console.warn('Não foi possível atualizar o app:', error));
       }
 
       // Atualiza o relógio e verifica prazos a cada 5 segundos
       setInterval(updateClockAndMonitor, 5000);
+      setInterval(() => {
+        const professorView = document.getElementById('professor-view');
+        if (professorLocatorFollowsCurrent && professorView && !professorView.classList.contains('hidden')) {
+          updateProfessorLocatorTime();
+        }
+      }, 30000);
     });
   </script>
 </body>

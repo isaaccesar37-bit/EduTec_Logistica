@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "EduLogística — Controle de Equipamentos",
-  "short_name": "EduLogística",
-  "description": "Agendamento e controle de entrega e recolhimento de equipamentos escolares.",
+  "name": "LembretesEduTec — Lembretes escolares",
+  "short_name": "LembretesEduTec",
+  "description": "Lembretes e localização de professores na escola.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'edulogistica-shell-v8';
+const CACHE_NAME = 'lembretes-edutec-shell-v9';
 const APP_SHELL = [
   './',
   './index.html',
