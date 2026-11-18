@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lembretes-edutec-shell-v9';
+const CACHE_NAME = 'lembretes-edutec-shell-v15';
 const APP_SHELL = [
   './',
   './index.html',
@@ -50,3 +50,9 @@ self.addEventListener('fetch', (event) => {
     }))
   );
 });
+
+
+
+
+
+

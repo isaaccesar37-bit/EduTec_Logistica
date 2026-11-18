@@ -191,10 +191,10 @@
           </button>
 
           <!-- Botão Principal: Lembrete -->
-          <button onclick="openBookingModal()"
+          <button id="new-reminder-button" onclick="openCurrentReminderForm()"
             class="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 active:scale-[0.98] text-white font-semibold px-4 py-2 rounded-xl shadow-md shadow-indigo-950/40 transition text-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
-            <span>Lembrete</span>
+            <span id="new-reminder-label">Novo Lembrete</span>
           </button>
         </div>
       </div>
@@ -202,8 +202,9 @@
   </header>
 
   <nav class="bg-white border-b border-slate-200 shadow-sm" aria-label="Seções principais">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-2 py-2">
-      <button id="tab-reminders" type="button" onclick="switchAppTab('reminders')" aria-selected="true" class="app-tab rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-600 text-white transition"><i data-lucide="bell" class="inline-block w-4 h-4 mr-1.5 align-[-3px]"></i>Lembretes</button>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap gap-2 py-2">
+      <button id="tab-reminders" type="button" onclick="switchAppTab('reminders')" aria-selected="true" class="app-tab rounded-xl px-4 py-2 text-sm font-semibold bg-indigo-600 text-white transition"><i data-lucide="package" class="inline-block w-4 h-4 mr-1.5 align-[-3px]"></i>Lembretes Equipamentos</button>
+      <button id="tab-workshops" type="button" onclick="switchAppTab('workshops')" aria-selected="false" class="app-tab rounded-xl px-4 py-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 transition"><i data-lucide="bot" class="inline-block w-4 h-4 mr-1.5 align-[-3px]"></i>Oficinas de Robótica</button>
       <button id="tab-professor" type="button" onclick="switchAppTab('professor')" aria-selected="false" class="app-tab rounded-xl px-4 py-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700 transition"><i data-lucide="map-pin" class="inline-block w-4 h-4 mr-1.5 align-[-3px]"></i>Professor</button>
     </div>
   </nav>
@@ -350,6 +351,62 @@
     </section>
   </main>
 
+  <main id="workshops-view" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" aria-labelledby="workshops-heading">
+    <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-5">
+      <div class="flex items-start gap-3">
+        <div class="w-11 h-11 shrink-0 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><i data-lucide="bot" class="w-5 h-5"></i></div>
+        <div><h2 id="workshops-heading" class="text-lg font-bold text-slate-900">Oficinas de Robótica</h2><p class="text-sm text-slate-500 mt-1">Cadastre cada oficina sinalizada pela professora. A atividade ocupa dois horários do turno da tarde.</p></div>
+      </div>
+      <div class="rounded-xl border border-indigo-100 bg-indigo-50/70 p-3.5">
+        <p class="text-xs font-bold text-indigo-900 mb-2">Horários da tarde</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 text-xs text-indigo-900">
+          <span class="rounded-lg bg-white px-3 py-2"><b>1º</b> · 13:00–13:50</span>
+          <span class="rounded-lg bg-white px-3 py-2"><b>2º</b> · 13:50–14:40</span>
+          <span class="rounded-lg bg-white px-3 py-2"><b>3º</b> · 14:40–15:30</span>
+          <span class="rounded-lg bg-white px-3 py-2"><b>4º</b> · 15:50–16:40</span>
+          <span class="rounded-lg bg-white px-3 py-2"><b>5º</b> · 16:40–17:30</span>
+        </div>
+        <p class="text-[11px] text-indigo-800 mt-2">Cada oficina usa dois horários consecutivos. Entre o 3º e o 4º há intervalo das 15:30 às 15:50.</p>
+      </div>
+      <form id="workshop-form" onsubmit="saveWorkshop(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+        <input type="hidden" id="workshop-id" />
+        <div><label for="workshop-date" class="block text-xs font-semibold text-slate-700 mb-1.5">Data</label><input id="workshop-date" type="date" required class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+        <div><label for="workshop-grade" class="block text-xs font-semibold text-slate-700 mb-1.5">Turma</label><select id="workshop-grade" onchange="handleWorkshopGradeChange()" required class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="">Selecione</option><option value="1">1º Ano · EF I</option><option value="2">2º Ano · EF I</option><option value="3">3º Ano · EF I</option><option value="4">4º Ano · EF I</option><option value="5">5º Ano · EF I</option><option value="6">6º Ano · EF II</option><option value="7">7º Ano · EF II</option><option value="8">8º Ano · EF II</option><option value="9">9º Ano · EF II</option></select></div>
+        <div><label for="workshop-teacher" class="block text-xs font-semibold text-slate-700 mb-1.5">Professora</label><input id="workshop-teacher" type="text" required maxlength="80" placeholder="Selecione a turma" readonly class="w-full rounded-xl border border-slate-300 bg-slate-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+        <div class="lg:col-span-2"><label for="workshop-slot" class="block text-xs font-semibold text-slate-700 mb-1.5">Horário</label><select id="workshop-slot" required class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"><option value="">Selecione o horário</option><option value="1">1º + 2º · 13:00–14:40</option><option value="2">2º + 3º · 13:50–15:30</option><option value="3">3º + 4º · 14:40–16:40</option><option value="4">4º + 5º · 15:50–17:30</option></select></div>
+        <div class="sm:col-span-2 lg:col-span-6"><label for="workshop-notes" class="block text-xs font-semibold text-slate-700 mb-1.5">Observações (opcional)</label><input id="workshop-notes" type="text" maxlength="240" placeholder="Ex.: depois do recreio, material especial" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+        <div class="sm:col-span-2 lg:col-span-6 flex justify-end gap-2"><button id="workshop-cancel-edit" type="button" onclick="resetWorkshopForm()" class="hidden rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar edição</button><button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"><i data-lucide="plus" class="w-4 h-4"></i><span id="workshop-save-label">Adicionar lembrete</span></button></div>
+      </form>
+    </section>
+    <section class="space-y-3" aria-label="Lembretes das oficinas de robótica">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2" role="tablist" aria-label="Visualização das oficinas">
+          <button id="workshop-agenda-tab" type="button" role="tab" aria-selected="true" aria-controls="workshop-agenda-panel" onclick="switchWorkshopView('agenda')" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Agenda das oficinas</button>
+          <button id="workshop-calendar-tab" type="button" role="tab" aria-selected="false" aria-controls="workshop-calendar-panel" onclick="switchWorkshopView('calendar')" class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">Calendário</button>
+        </div>
+        <span id="workshop-count" class="text-xs font-semibold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">0</span>
+      </div>
+      <div id="workshop-agenda-panel" role="tabpanel" aria-labelledby="workshop-agenda-tab">
+        <div id="workshops-list" class="space-y-3"></div>
+        <div id="workshops-empty" class="hidden rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center"><p class="font-bold text-slate-800">Nenhuma oficina cadastrada</p><p class="mt-1 text-sm text-slate-500">Adicione a data, a professora, o ano escolar e o bloco de horários sinalizado.</p></div>
+      </div>
+      <div id="workshop-calendar-panel" role="tabpanel" aria-labelledby="workshop-calendar-tab" class="hidden rounded-2xl border border-slate-200 bg-white p-3 sm:p-5 shadow-sm">
+        <div class="mb-4 flex items-center justify-between gap-3">
+          <button type="button" onclick="changeWorkshopCalendarMonth(-1)" aria-label="Mês anterior" class="rounded-xl border border-slate-200 p-2.5 text-slate-600 hover:bg-slate-50"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
+          <h3 id="workshop-calendar-title" class="text-base font-bold capitalize text-slate-900"></h3>
+          <button type="button" onclick="changeWorkshopCalendarMonth(1)" aria-label="Próximo mês" class="rounded-xl border border-slate-200 p-2.5 text-slate-600 hover:bg-slate-50"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
+        </div>
+        <div class="overflow-x-auto">
+          <div class="min-w-[650px]">
+            <div class="grid grid-cols-5 gap-1.5 mb-1.5 text-center text-xs font-bold text-slate-500"><div class="py-2">Segunda</div><div class="py-2">Terça</div><div class="py-2">Quarta</div><div class="py-2">Quinta</div><div class="py-2">Sexta</div></div>
+            <div id="workshop-calendar-grid" class="space-y-1.5"></div>
+          </div>
+        </div>
+        <p class="mt-3 text-[11px] text-slate-500">O calendário mostra os dias letivos de segunda a sexta. Selecione uma data para iniciar um lembrete naquele dia.</p>
+      </div>
+    </section>
+  </main>
+
   <main id="professor-view" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6" aria-labelledby="professor-heading">
     <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-5">
       <div class="flex flex-wrap items-start justify-between gap-3"><div class="flex items-start gap-3"><div class="w-11 h-11 shrink-0 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><i data-lucide="map-pin" class="w-5 h-5"></i></div><div><h2 id="professor-heading" class="text-lg font-bold text-slate-900">Localizador de professores</h2><p class="text-sm text-slate-500 mt-1">Acompanhe a turma do professor no horário atual ou consulte outra faixa.</p></div></div><button id="professor-now-button" type="button" onclick="followCurrentProfessorSchedule()" class="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"><i data-lucide="clock-3" class="h-4 w-4"></i><span>Seguindo horário atual</span></button></div>
@@ -369,7 +426,7 @@
   <!-- Rodapé -->
   <footer class="bg-white border-t border-slate-200 py-4 mt-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-      <p>LembretesEduTec — Assistente pessoal para entrega e recolhimento de equipamentos escolares.</p>
+      <p>LembretesEduTec — Agenda de equipamentos, oficinas de robótica e localização de professores.</p>
       <p>Dados salvos localmente no seu navegador.</p>
     </div>
   </footer>
@@ -761,6 +818,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       teachers: [],
       classes: [],
       equipment: [],
+      workshops: [],
       schoolCatalogsResetV1: false
     };
     let firebaseAuth = null;
@@ -781,6 +839,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
     let modalSelectedEquipments = []; // [{ name: 'Notebook', qty: 10 }]
     let pickupTimeManuallyEdited = false;
     let bannerDismissedUntil = 0;
+    let workshopCalendarDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
     // =========================================================================
     // UTILITÁRIOS DE DATA E HORA
@@ -848,6 +907,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         console.error('Erro ao carregar dados locais:', e);
       }
       ensureProfessorSchedule();
+      normalizeRoboticsWorkshopTeachers();
       normalizeSchoolCatalogs();
       if (resetSchoolCatalogs) saveState();
     }
@@ -867,6 +927,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         teachers: [],
         classes: [],
         equipment: [],
+        workshops: [],
         professorNames: [...PROFESSOR_SCHEDULE_TEACHERS],
         professorSchedule: getDefaultProfessorAssignments(),
         schoolCatalogsResetV1: true
@@ -1058,18 +1119,19 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
     }
 
     function switchAppTab(tab) {
-      const showProfessor = tab === 'professor';
-      document.getElementById('reminders-view').classList.toggle('hidden', showProfessor);
-      document.getElementById('professor-view').classList.toggle('hidden', !showProfessor);
-      const remindersTab = document.getElementById('tab-reminders');
-      const professorTab = document.getElementById('tab-professor');
-      remindersTab.setAttribute('aria-selected', String(!showProfessor));
-      professorTab.setAttribute('aria-selected', String(showProfessor));
-      remindersTab.className = 'app-tab rounded-xl px-4 py-2 text-sm font-semibold transition ' +
-        (showProfessor ? 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700' : 'bg-indigo-600 text-white');
-      professorTab.className = 'app-tab rounded-xl px-4 py-2 text-sm font-semibold transition ' +
-        (showProfessor ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700');
-      if (showProfessor) {
+      if (!['reminders', 'workshops', 'professor'].includes(tab)) tab = 'reminders';
+      ['reminders', 'workshops', 'professor'].forEach(name => {
+        const selected = name === tab;
+        document.getElementById(name + '-view').classList.toggle('hidden', !selected);
+        const button = document.getElementById('tab-' + name);
+        button.setAttribute('aria-selected', String(selected));
+        button.className = 'app-tab rounded-xl px-4 py-2 text-sm font-semibold transition ' +
+          (selected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700');
+      });
+      const label = document.getElementById('new-reminder-label');
+      if (label) label.textContent = tab === 'workshops' ? 'Nova Oficina' : tab === 'professor' ? 'Lembretes' : 'Novo Lembrete';
+      if (tab === 'workshops') renderWorkshops();
+      if (tab === 'professor') {
         if (professorLocatorFollowsCurrent) updateProfessorLocatorTime();
         else renderProfessorLocator();
       }
@@ -1382,6 +1444,35 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         }
       });
 
+      (settings.workshops || []).forEach((workshop) => {
+        if (workshop.status === 'completed') return;
+        const targetTime = parseDateTime(workshop.date, workshop.startTime);
+        const diffMs = targetTime.getTime() - now.getTime();
+        const label = `Oficina de Robótica — ${workshop.grade}º Ano`;
+        if (diffMs < 0) {
+          urgentMessages.push(`${label} atrasada: ${workshop.teacher} às ${workshop.startTime}`);
+          const eventKey = `${workshop.id}_workshop_overdue`;
+          if (!settings.notifiedEvents[eventKey]) {
+            settings.notifiedEvents[eventKey] = true;
+            triggerSound = true;
+            saveState();
+            showToast(`A oficina do ${workshop.grade}º Ano já deveria ter começado.`, 'error');
+            sendBrowserNotification('⚠️ Oficina atrasada', `${workshop.teacher} • ${workshop.grade}º Ano às ${workshop.startTime}`);
+          }
+        } else if (diffMs <= leadMs) {
+          const minsLeft = Math.ceil(diffMs / 60000);
+          urgentMessages.push(`${label} em ${minsLeft} min: ${workshop.teacher} às ${workshop.startTime}`);
+          const eventKey = `${workshop.id}_workshop_upcoming`;
+          if (!settings.notifiedEvents[eventKey]) {
+            settings.notifiedEvents[eventKey] = true;
+            triggerSound = true;
+            saveState();
+            showToast(`Oficina de Robótica do ${workshop.grade}º Ano em ${minsLeft} min.`, 'warning');
+            sendBrowserNotification(`⏰ Oficina em ${minsLeft} min`, `${workshop.teacher} • ${workshop.grade}º Ano · ${workshop.startTime}–${workshop.endTime}`);
+          }
+        }
+      });
+
       if (triggerSound) {
         playAlertChime();
       }
@@ -1421,6 +1512,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
 
       // 3. Filtrar lista principal
       if (!document.getElementById('professor-view').classList.contains('hidden')) renderProfessorLocator();
+      renderWorkshops();
       const tomorrowISO = getTomorrowISO();
       let filtered = bookings.filter((b) => {
         if (currentDateFilter === 'today' && b.date !== todayISO) return false;
@@ -1472,6 +1564,249 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       }
 
       lucide.createIcons();
+    }
+
+    const ROBOTICS_WORKSHOP_SLOTS = {
+      '1': { startTime: '13:00', endTime: '14:40', label: '1º + 2º horários' },
+      '2': { startTime: '13:50', endTime: '15:30', label: '2º + 3º horários' },
+      '3': { startTime: '14:40', endTime: '16:40', label: '3º + 4º horários (com intervalo)' },
+      '4': { startTime: '15:50', endTime: '17:30', label: '4º + 5º horários' }
+    };
+    const ROBOTICS_GRADE_TEACHERS = { 1: 'Domenica', 2: 'Pamela', 3: 'Katia', 4: 'Ana Flavia', 5: 'Lisandra' };
+
+    function normalizeRoboticsWorkshopTeachers() {
+      if (!settings || !Array.isArray(settings.workshops)) return;
+      settings.workshops.forEach(workshop => {
+        const assignedTeacher = ROBOTICS_GRADE_TEACHERS[Number(workshop.grade)];
+        if (assignedTeacher) workshop.teacher = assignedTeacher;
+      });
+    }
+
+    function handleWorkshopGradeChange() {
+      const grade = Number(document.getElementById('workshop-grade').value);
+      const teacher = document.getElementById('workshop-teacher');
+      const assignedTeacher = ROBOTICS_GRADE_TEACHERS[grade];
+      teacher.readOnly = Boolean(assignedTeacher);
+      teacher.value = assignedTeacher || '';
+      teacher.placeholder = assignedTeacher ? '' : 'Informe o nome da professora';
+      teacher.classList.toggle('bg-slate-100', Boolean(assignedTeacher));
+      teacher.classList.toggle('bg-slate-50', !assignedTeacher);
+    }
+
+    function openCurrentReminderForm() {
+      if (!document.getElementById('workshops-view').classList.contains('hidden')) {
+        resetWorkshopForm();
+        document.getElementById('workshop-date').value = getTodayISO();
+        document.getElementById('workshop-teacher').focus();
+        return;
+      }
+      if (!document.getElementById('professor-view').classList.contains('hidden')) switchAppTab('reminders');
+      openBookingModal();
+    }
+
+    function resetWorkshopForm() {
+      const form = document.getElementById('workshop-form');
+      form.reset();
+      handleWorkshopGradeChange();
+      document.getElementById('workshop-id').value = '';
+      document.getElementById('workshop-date').value = getTodayISO();
+      document.getElementById('workshop-save-label').textContent = 'Adicionar lembrete';
+      document.getElementById('workshop-cancel-edit').classList.add('hidden');
+    }
+
+    function saveWorkshop(event) {
+      event.preventDefault();
+      const id = document.getElementById('workshop-id').value;
+      const date = document.getElementById('workshop-date').value;
+      const grade = Number(document.getElementById('workshop-grade').value);
+      const teacher = ROBOTICS_GRADE_TEACHERS[grade] || document.getElementById('workshop-teacher').value.trim();
+      const slot = document.getElementById('workshop-slot').value;
+      const notes = document.getElementById('workshop-notes').value.trim();
+      const schedule = ROBOTICS_WORKSHOP_SLOTS[slot];
+      if (!date || !teacher || !Number.isInteger(grade) || grade < 1 || grade > 9 || !schedule) return;
+      const weekday = new Date(`${date}T12:00:00`).getDay();
+      if (weekday < 1 || weekday > 5) {
+        showToast('As oficinas podem ser agendadas de segunda a sexta-feira.', 'warning');
+        return;
+      }
+      settings.workshops = Array.isArray(settings.workshops) ? settings.workshops : [];
+      const startMinutes = Number(schedule.startTime.slice(0, 2)) * 60 + Number(schedule.startTime.slice(3));
+      const endMinutes = Number(schedule.endTime.slice(0, 2)) * 60 + Number(schedule.endTime.slice(3));
+      const overlaps = settings.workshops.some(item => {
+        if (item.date !== date || item.id === id) return false;
+        const existingStart = Number(item.startTime.slice(0, 2)) * 60 + Number(item.startTime.slice(3));
+        const existingEnd = Number(item.endTime.slice(0, 2)) * 60 + Number(item.endTime.slice(3));
+        return startMinutes < existingEnd && endMinutes > existingStart;
+      });
+      if (overlaps) {
+        showToast('Já existe uma oficina marcada em horário sobreposto nessa data.', 'warning');
+        return;
+      }
+      const workshopData = { date, teacher, grade, slot, startTime: schedule.startTime, endTime: schedule.endTime, notes };
+      if (id) {
+        const index = settings.workshops.findIndex(item => item.id === id);
+        if (index < 0) return;
+        settings.workshops[index] = { ...settings.workshops[index], ...workshopData };
+        delete settings.notifiedEvents[`${id}_workshop_upcoming`];
+        delete settings.notifiedEvents[`${id}_workshop_overdue`];
+        showToast('Lembrete da oficina atualizado.', 'success');
+      } else {
+        settings.workshops.push({
+          id: 'ws_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          ...workshopData,
+          status: 'pending'
+        });
+        showToast('Lembrete da oficina adicionado.', 'success');
+      }
+      saveState();
+      resetWorkshopForm();
+      renderWorkshops();
+    }
+
+    function editWorkshop(id) {
+      const workshop = (settings.workshops || []).find(item => item.id === id);
+      if (!workshop) return;
+      document.getElementById('workshop-id').value = workshop.id;
+      document.getElementById('workshop-date').value = workshop.date;
+      document.getElementById('workshop-grade').value = String(workshop.grade);
+      handleWorkshopGradeChange();
+      if (!ROBOTICS_GRADE_TEACHERS[Number(workshop.grade)]) document.getElementById('workshop-teacher').value = workshop.teacher;
+      document.getElementById('workshop-slot').value = workshop.slot;
+      document.getElementById('workshop-notes').value = workshop.notes || '';
+      document.getElementById('workshop-save-label').textContent = 'Salvar alterações';
+      document.getElementById('workshop-cancel-edit').classList.remove('hidden');
+      document.getElementById('workshop-date').focus();
+      document.getElementById('workshop-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function setWorkshopStatus(id, status) {
+      const workshop = (settings.workshops || []).find(item => item.id === id);
+      if (!workshop || !['pending', 'completed'].includes(status)) return;
+      workshop.status = status;
+      if (status === 'pending') {
+        delete settings.notifiedEvents[`${id}_workshop_upcoming`];
+        delete settings.notifiedEvents[`${id}_workshop_overdue`];
+      }
+      saveState();
+      renderWorkshops();
+      showToast(status === 'completed' ? 'Oficina marcada como concluída.' : 'Lembrete da oficina reaberto.', 'success');
+    }
+
+    function confirmDeleteWorkshop(id) {
+      const workshop = (settings.workshops || []).find(item => item.id === id);
+      if (!workshop) return;
+      openConfirmModal(
+        'Excluir lembrete da oficina?',
+        `O lembrete do ${workshop.grade}º Ano em ${formatDateBR(workshop.date)} será removido da agenda.`,
+        () => {
+          settings.workshops = settings.workshops.filter(item => item.id !== id);
+          Object.keys(settings.notifiedEvents || {}).forEach(key => {
+            if (key.startsWith(`${id}_`)) delete settings.notifiedEvents[key];
+          });
+          saveState();
+          renderWorkshops();
+          showToast('Lembrete da oficina excluído.', 'info');
+        }
+      );
+    }
+
+    function switchWorkshopView(view) {
+      const showCalendar = view === 'calendar';
+      const agendaPanel = document.getElementById('workshop-agenda-panel');
+      const calendarPanel = document.getElementById('workshop-calendar-panel');
+      const agendaTab = document.getElementById('workshop-agenda-tab');
+      const calendarTab = document.getElementById('workshop-calendar-tab');
+      agendaPanel.classList.toggle('hidden', showCalendar);
+      calendarPanel.classList.toggle('hidden', !showCalendar);
+      agendaTab.setAttribute('aria-selected', String(!showCalendar));
+      calendarTab.setAttribute('aria-selected', String(showCalendar));
+      agendaTab.className = 'rounded-xl px-4 py-2 text-sm font-semibold ' + (showCalendar ? 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700' : 'bg-indigo-600 text-white');
+      calendarTab.className = 'rounded-xl px-4 py-2 text-sm font-semibold ' + (showCalendar ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700');
+      if (showCalendar) renderWorkshopCalendar();
+    }
+
+    function changeWorkshopCalendarMonth(amount) {
+      workshopCalendarDate = new Date(workshopCalendarDate.getFullYear(), workshopCalendarDate.getMonth() + amount, 1);
+      renderWorkshopCalendar();
+    }
+
+    function localDateToISO(date) {
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+
+    function selectWorkshopCalendarDate(date) {
+      document.getElementById('workshop-date').value = date;
+      switchWorkshopView('agenda');
+      document.getElementById('workshop-grade').focus();
+      document.getElementById('workshop-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function renderWorkshopCalendar() {
+      const title = document.getElementById('workshop-calendar-title');
+      const grid = document.getElementById('workshop-calendar-grid');
+      if (!title || !grid) return;
+      title.textContent = workshopCalendarDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      const year = workshopCalendarDate.getFullYear();
+      const month = workshopCalendarDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const mondayOffset = (firstDay.getDay() + 6) % 7;
+      const gridStart = new Date(year, month, 1 - mondayOffset);
+      const weekCount = Math.ceil((mondayOffset + new Date(year, month + 1, 0).getDate()) / 7);
+      const today = getTodayISO();
+      const workshops = settings.workshops || [];
+      const rows = [];
+      for (let week = 0; week < weekCount; week++) {
+        const cells = [];
+        for (let weekday = 0; weekday < 5; weekday++) {
+          const cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + week * 7 + weekday);
+          const dateISO = localDateToISO(cellDate);
+          const inMonth = cellDate.getMonth() === month;
+          const dayWorkshops = workshops.filter(item => item.date === dateISO).sort((a, b) => a.startTime.localeCompare(b.startTime));
+          const eventHTML = dayWorkshops.length
+            ? dayWorkshops.map(item => `<div class="mt-1 rounded-lg px-1.5 py-1 text-left text-[10px] leading-tight ${item.status === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-indigo-100 text-indigo-900'}"><b>${escapeHTML(item.grade)}º Ano</b><br>${escapeHTML(item.startTime)} · ${escapeHTML(item.teacher)}</div>`).join('')
+            : '<span class="mt-1 block text-[10px] text-slate-300">—</span>';
+          cells.push(`<div class="min-h-[112px] rounded-xl border ${inMonth ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50/70'} p-1.5 sm:p-2"><button type="button" onclick="selectWorkshopCalendarDate('${dateISO}')" class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${dateISO === today ? 'bg-indigo-600 text-white' : inMonth ? 'text-slate-700 hover:bg-indigo-50' : 'text-slate-300 hover:bg-slate-100'}" aria-label="Adicionar oficina em ${dateISO}">${cellDate.getDate()}</button>${eventHTML}</div>`);
+        }
+        rows.push(`<div class="grid grid-cols-5 gap-1.5">${cells.join('')}</div>`);
+      }
+      grid.innerHTML = rows.join('');
+      lucide.createIcons();
+    }
+
+    function renderWorkshops() {
+      const list = document.getElementById('workshops-list');
+      if (!list) return;
+      const dayNames = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+      const items = [...(settings.workshops || [])].sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`));
+      document.getElementById('workshop-count').textContent = items.length;
+      document.getElementById('workshops-empty').classList.toggle('hidden', items.length > 0);
+      list.innerHTML = items.map(workshop => {
+        const completed = workshop.status === 'completed';
+        const start = parseDateTime(workshop.date, workshop.startTime);
+        const diff = start.getTime() - Date.now();
+        const lead = Number(settings.leadTimeMinutes || 15) * 60000;
+        const timing = completed ? 'Concluída' : diff < 0 ? `Atrasada há ${formatMinutesDiff(diff)}` : diff <= lead ? `Começa em ${formatMinutesDiff(diff)}` : 'Agendada';
+        const timingClass = completed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : diff < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : diff <= lead ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        const dayName = dayNames[new Date(`${workshop.date}T12:00:00`).getDay()];
+        const schoolStage = Number(workshop.grade) <= 5 ? 'Ensino Fundamental I' : 'Ensino Fundamental II';
+        return `<article class="rounded-2xl border ${completed ? 'border-slate-200 opacity-75' : 'border-slate-200'} bg-white p-4 sm:p-5 shadow-sm">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="space-y-2 min-w-0">
+              <div class="flex flex-wrap items-center gap-2"><span class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">${escapeHTML(dayName)} · ${formatDateBR(workshop.date)}</span><span class="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-800">${escapeHTML(ROBOTICS_WORKSHOP_SLOTS[workshop.slot]?.label || 'Dois horários')}</span><span class="rounded-full border px-2.5 py-1 text-xs font-bold ${timingClass}">${escapeHTML(timing)}</span></div>
+              <h4 class="text-base font-bold text-slate-900">${escapeHTML(workshop.grade)}º Ano · ${escapeHTML(schoolStage)}</h4>
+              <p class="text-sm text-slate-600">Professora: <b>${escapeHTML(ROBOTICS_GRADE_TEACHERS[Number(workshop.grade)] || workshop.teacher)}</b> · Robótica · ${escapeHTML(workshop.startTime)}–${escapeHTML(workshop.endTime)}</p>
+              ${workshop.notes ? `<p class="text-xs text-slate-500">${escapeHTML(workshop.notes)}</p>` : ''}
+            </div>
+            <div class="flex flex-wrap items-center gap-2 shrink-0">
+              <button type="button" onclick="setWorkshopStatus('${workshop.id}', '${completed ? 'pending' : 'completed'}')" class="rounded-xl px-3 py-2 text-xs font-bold ${completed ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'}">${completed ? 'Reabrir lembrete' : 'Marcar concluída'}</button>
+              <button type="button" onclick="editWorkshop('${workshop.id}')" aria-label="Editar lembrete da oficina" class="rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-indigo-50 hover:text-indigo-700"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+              <button type="button" onclick="confirmDeleteWorkshop('${workshop.id}')" aria-label="Excluir lembrete da oficina" class="rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-rose-50 hover:text-rose-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+        </article>`;
+      }).join('');
+      lucide.createIcons();
+      if (!document.getElementById('workshop-calendar-panel').classList.contains('hidden')) renderWorkshopCalendar();
     }
 
     function renderNextActionCard(now) {
@@ -2408,6 +2743,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         const data = savedState.data() || {};
         bookings = Array.isArray(data.bookings) ? data.bookings : [];
         settings = { ...createDefaultSettings(), ...(data.settings || {}) };
+        normalizeRoboticsWorkshopTeachers();
         scheduleNeedsMigration = !Array.isArray(data.settings?.professorSchedule) || !Array.isArray(data.settings?.professorNames);
       } else {
         const localOwner = localStorage.getItem(LOCAL_USER_KEY);
