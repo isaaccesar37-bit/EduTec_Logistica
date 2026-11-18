@@ -1129,7 +1129,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
           (selected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-700');
       });
       const label = document.getElementById('new-reminder-label');
-      if (label) label.textContent = tab === 'workshops' ? 'Nova Oficina' : tab === 'professor' ? 'Lembretes' : 'Novo Lembrete';
+      if (label) label.textContent = 'Novo Lembrete';
       if (tab === 'workshops') renderWorkshops();
       if (tab === 'professor') {
         if (professorLocatorFollowsCurrent) updateProfessorLocatorTime();
@@ -1594,13 +1594,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
     }
 
     function openCurrentReminderForm() {
-      if (!document.getElementById('workshops-view').classList.contains('hidden')) {
-        resetWorkshopForm();
-        document.getElementById('workshop-date').value = getTodayISO();
-        document.getElementById('workshop-teacher').focus();
-        return;
-      }
-      if (!document.getElementById('professor-view').classList.contains('hidden')) switchAppTab('reminders');
+      switchAppTab('reminders');
       openBookingModal();
     }
 
