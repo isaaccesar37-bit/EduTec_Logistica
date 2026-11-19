@@ -117,6 +117,7 @@
     .sidebar-link:hover { background: #f0fdf4; color: #047857; }
     .mobile-settings-link { display: none; }
     .sidebar-label-mobile { display: none; }
+    #workshop-main-tabs .workshop-quick-register { flex: 1 0 100%; margin-left: 0; }
     #workshops-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; }
     #workshops-list > * { margin-top: 0 !important; min-width: 0; }
     @media (max-width: 900px) {
@@ -136,26 +137,43 @@
       #toast-container { bottom: calc(70px + env(safe-area-inset-bottom)); left: .75rem; right: .75rem; width: auto; max-width: none; }
     }
     @media (max-width: 640px) {
+      html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+      #app-shell { width: 100%; max-width: 100vw; overflow-x: clip; }
       .login-layout { display: flex; flex-direction: column; }
       .login-intro { min-height: 150px; padding: 1.25rem; }
       .login-intro-copy { display: none; }
       .login-card-zone { flex: 1; min-height: auto; padding: 1rem; }
-      #app-shell > header.app-topbar > div { padding: .55rem .65rem; }
-      #app-shell > header.app-topbar > div > div { flex-wrap: nowrap; gap: .35rem; }
-      #app-shell > header.app-topbar .topbar-brand { min-width: 0; flex: 1 1 auto; }
+      #app-shell > header.app-topbar > div { padding: .5rem .65rem; }
+      #app-shell > header.app-topbar > div > div { min-width: 0; flex-wrap: wrap; gap: .35rem .5rem; }
+      #app-shell > header.app-topbar .topbar-brand { min-width: 0; width: 100%; flex: 1 1 100%; gap: .5rem; }
+      #app-shell > header.app-topbar .topbar-brand > div { min-width: 0; flex: 1 1 auto; }
       #app-shell > header.app-topbar .topbar-mobile-mark { display: block; }
-      #app-shell > header.app-topbar .topbar-brand h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .88rem; }
-      #app-shell > header.app-topbar .topbar-brand p { font-size: .63rem; }
-      #app-shell > header.app-topbar .topbar-actions { flex: 0 0 auto; gap: .25rem; }
-      #app-shell > header.app-topbar #btn-sound-toggle, #app-shell > header.app-topbar #btn-notif-perm { padding: .45rem; }
+      #app-shell > header.app-topbar .topbar-brand h1 { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; font-size: .9rem; line-height: 1.15; }
+      #app-shell > header.app-topbar .topbar-brand p { margin-top: .18rem; font-size: .64rem; line-height: 1.25; }
+      #app-shell > header.app-topbar .topbar-actions { display: grid; width: 100%; min-width: 0; flex: 1 1 100%; grid-template-columns: 2.5rem 2.5rem minmax(0, 1fr); gap: .35rem; }
+      #app-shell > header.app-topbar #btn-sound-toggle, #app-shell > header.app-topbar #btn-notif-perm { width: 2.5rem; min-width: 2.5rem; min-height: 2.4rem; justify-content: center; padding: .45rem; }
       #app-shell > header.app-topbar button[onclick="openSettingsModal()"] { display: none; }
-      #app-shell > header.app-topbar #new-reminder-button { padding: .5rem .6rem; font-size: .68rem; gap: .3rem; }
+      #app-shell > header.app-topbar #new-reminder-button { width: 100%; min-width: 0; min-height: 2.4rem; justify-content: center; padding: .45rem .55rem; font-size: .72rem; gap: .3rem; white-space: nowrap; }
       #app-shell > header.app-topbar #new-reminder-button i { width: .9rem; height: .9rem; }
       #app-shell > header.app-topbar #label-sound, #app-shell > header.app-topbar #label-notif { display: none; }
+      #reminders-view, #workshops-view, #professor-view { min-width: 0; padding: .85rem .7rem calc(82px + env(safe-area-inset-bottom)); }
+      #reminders-view > *, #workshops-view > *, #professor-view > * { min-width: 0; max-width: 100%; }
+      #professor-view > section:first-child > div:first-child { min-width: 0; }
+      #professor-view > section:first-child > div:first-child > div:last-of-type { min-width: 0; flex: 1 1 180px; }
+      #professor-now-button { width: 100%; justify-content: center; }
+      #app-sidebar { height: calc(62px + env(safe-area-inset-bottom)); }
+      #app-sidebar .sidebar-nav { padding-bottom: calc(.25rem + env(safe-area-inset-bottom)); }
+      #app-sidebar .sidebar-link { overflow: hidden; }
+      #app-sidebar .sidebar-link span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+      #workshop-progress-panel > section { align-items: stretch; }
+      #workshop-progress-panel > section > div:last-child { width: 100%; min-width: 0; }
+      #workshop-progress-panel > section > div:last-child > div { min-width: 0; width: 100%; }
       #workshop-main-tabs .workshop-quick-register { flex-basis: 100%; margin-left: 0; }
-      #workshop-main-tabs [role="tab"] { display: flex; flex: 1 1 auto; align-items: center; justify-content: center; padding-left: .55rem; padding-right: .55rem; font-size: .68rem; }
+      #workshop-main-tabs [role="tab"] { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; justify-content: center; padding: .5rem .45rem; font-size: .68rem; line-height: 1.2; }
+      #workshop-main-tabs [role="tab"] i { flex: 0 0 auto; }
       #settings-modal { padding: 0; }
       #settings-modal > div { width: 100%; max-width: none; height: 100dvh; max-height: 100dvh; border-radius: 0; }
+      #settings-modal input, #settings-modal select, #settings-modal button { min-width: 0; max-width: 100%; }
       #workshops-list { grid-template-columns: 1fr; }
     }
   </style>
@@ -468,10 +486,10 @@
       <button id="workshop-management-tab" type="button" role="tab" aria-selected="true" aria-controls="workshop-management-panel" onclick="switchWorkshopSection('management')" class="rounded-xl px-4 py-2 text-sm font-semibold bg-emerald-600 text-white transition"><i data-lucide="clipboard-list" class="mr-1.5 inline-block h-4 w-4 align-[-3px]"></i>Agenda & Registro</button>
       <button id="workshop-weekly-tab" type="button" role="tab" aria-selected="false" aria-controls="workshop-weekly-panel" onclick="switchWorkshopSection('weekly')" class="rounded-xl px-4 py-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition"><i data-lucide="calendar-days" class="mr-1.5 inline-block h-4 w-4 align-[-3px]"></i>Grade Semanal</button>
       <button id="workshop-progress-tab" type="button" role="tab" aria-selected="false" aria-controls="workshop-progress-panel" onclick="switchWorkshopSection('progress')" class="rounded-xl px-4 py-2 text-sm font-semibold bg-slate-100 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition"><i data-lucide="chart-no-axes-column-increasing" class="mr-1.5 inline-block h-4 w-4 align-[-3px]"></i>Acompanhamento Pedagógico (21 oficinas)</button>
-      <button type="button" onclick="openWorkshopRegistration()" class="workshop-quick-register ml-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"><i data-lucide="circle-plus" class="h-4 w-4"></i>Registrar Oficina</button>
+      <button type="button" onclick="openWorkshopRegistration()" class="workshop-quick-register inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"><i data-lucide="circle-plus" class="h-4 w-4"></i>Registrar Oficina</button>
     </div>
     <div id="workshop-management-panel" role="tabpanel" aria-labelledby="workshop-management-tab" class="space-y-6">
-    <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-5">
+    <section id="workshop-registration-panel" class="hidden bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-5">
       <div class="flex items-start gap-3">
         <div class="w-11 h-11 shrink-0 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i data-lucide="bot" class="w-5 h-5"></i></div>
         <div><h2 id="workshops-heading" class="text-lg font-bold text-slate-900">Oficinas de Robótica</h2><p class="text-sm text-slate-500 mt-1">Cadastre cada oficina sinalizada pela professora. A atividade ocupa dois horários do turno da tarde.</p></div>
@@ -494,7 +512,7 @@
         <div><label for="workshop-teacher" class="block text-xs font-semibold text-slate-700 mb-1.5">Professora</label><input id="workshop-teacher" type="text" required maxlength="80" placeholder="Selecione a turma" readonly class="w-full rounded-xl border border-slate-300 bg-slate-100 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
         <div class="lg:col-span-2"><label for="workshop-slot" class="block text-xs font-semibold text-slate-700 mb-1.5">Horário</label><select id="workshop-slot" required class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"><option value="">Selecione o horário</option><option value="1">1º + 2º · 13:00–14:40</option><option value="2">2º + 3º · 13:50–15:30</option><option value="3">3º + 4º · 14:40–16:40</option><option value="4">4º + 5º · 15:50–17:30</option></select></div>
         <div class="sm:col-span-2 lg:col-span-6"><label for="workshop-notes" class="block text-xs font-semibold text-slate-700 mb-1.5">Observações (opcional)</label><input id="workshop-notes" type="text" maxlength="240" placeholder="Ex.: depois do recreio, material especial" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></div>
-        <div class="sm:col-span-2 lg:col-span-6 flex justify-end gap-2"><button id="workshop-cancel-edit" type="button" onclick="resetWorkshopForm()" class="hidden rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar edição</button><button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"><i data-lucide="plus" class="w-4 h-4"></i><span id="workshop-save-label">Adicionar lembrete</span></button></div>
+        <div class="sm:col-span-2 lg:col-span-6 flex justify-end gap-2"><button id="workshop-cancel-edit" type="button" onclick="closeWorkshopRegistration()" class="hidden rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button><button type="button" onclick="closeWorkshopRegistration()" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Fechar</button><button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"><i data-lucide="plus" class="w-4 h-4"></i><span id="workshop-save-label">Adicionar lembrete</span></button></div>
       </form>
     </section>
     <section class="space-y-3" aria-label="Lembretes das oficinas de robótica">
@@ -1809,12 +1827,14 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       }
       saveState();
       resetWorkshopForm();
+      document.getElementById('workshop-registration-panel').classList.add('hidden');
       renderWorkshops();
     }
 
     function editWorkshop(id) {
       const workshop = (settings.workshops || []).find(item => item.id === id);
       if (!workshop) return;
+      document.getElementById('workshop-registration-panel').classList.remove('hidden');
       document.getElementById('workshop-id').value = workshop.id;
       document.getElementById('workshop-date').value = workshop.date;
       document.getElementById('workshop-grade').value = String(workshop.grade);
@@ -1894,8 +1914,14 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
     function openWorkshopRegistration() {
       switchWorkshopSection('management');
       resetWorkshopForm();
+      document.getElementById('workshop-registration-panel').classList.remove('hidden');
       document.getElementById('workshop-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
       document.getElementById('workshop-grade').focus({ preventScroll: true });
+    }
+
+    function closeWorkshopRegistration() {
+      resetWorkshopForm();
+      document.getElementById('workshop-registration-panel').classList.add('hidden');
     }
 
     function changeWorkshopWeek(amount) {
@@ -2108,21 +2134,19 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
         const lead = Number(settings.leadTimeMinutes || 15) * 60000;
         const timing = completed ? 'Concluída' : diff < 0 ? `Atrasada há ${formatMinutesDiff(diff)}` : diff <= lead ? `Começa em ${formatMinutesDiff(diff)}` : 'Agendada';
         const timingClass = completed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : diff < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : diff <= lead ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
-        const dayName = dayNames[new Date(`${workshop.date}T12:00:00`).getDay()];
-        const schoolStage = Number(workshop.grade) <= 5 ? 'Ensino Fundamental I' : 'Ensino Fundamental II';
-        return `<article class="rounded-2xl border ${completed ? 'border-slate-200 opacity-75' : 'border-slate-200'} bg-white p-4 sm:p-5 shadow-sm">
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div class="space-y-2 min-w-0">
-              <div class="flex flex-wrap items-center gap-2"><span class="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">${escapeHTML(dayName)} · ${formatDateBR(workshop.date)}</span><span class="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800">${escapeHTML(ROBOTICS_WORKSHOP_SLOTS[workshop.slot]?.label || 'Dois horários')}</span><span class="rounded-full border px-2.5 py-1 text-xs font-bold ${timingClass}">${escapeHTML(timing)}</span></div>
-              <h4 class="text-base font-bold text-slate-900">${escapeHTML(workshop.grade)}º Ano · ${escapeHTML(schoolStage)}</h4>
-              <p class="text-sm text-slate-600">Professora: <b>${escapeHTML(ROBOTICS_GRADE_TEACHERS[Number(workshop.grade)] || workshop.teacher)}</b> · Robótica · ${escapeHTML(workshop.startTime)}–${escapeHTML(workshop.endTime)}</p>
-              ${workshop.notes ? `<p class="text-xs text-slate-500">${escapeHTML(workshop.notes)}</p>` : ''}
-            </div>
-            <div class="flex flex-wrap items-center gap-2 shrink-0">
-              <button type="button" onclick="setWorkshopStatus('${workshop.id}', '${completed ? 'pending' : 'completed'}')" class="rounded-xl px-3 py-2 text-xs font-bold ${completed ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'}">${completed ? 'Reabrir lembrete' : 'Marcar concluída'}</button>
-              <button type="button" onclick="editWorkshop('${workshop.id}')" aria-label="Editar lembrete da oficina" class="rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-              <button type="button" onclick="confirmDeleteWorkshop('${workshop.id}')" aria-label="Excluir lembrete da oficina" class="rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-rose-50 hover:text-rose-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-            </div>
+        const teacher = ROBOTICS_GRADE_TEACHERS[Number(workshop.grade)] || workshop.teacher;
+        return `<article class="rounded-2xl border ${completed ? 'border-slate-200 opacity-75' : 'border-slate-200'} bg-white p-3.5 sm:p-4 shadow-sm">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex min-w-0 flex-wrap items-center gap-1.5"><span class="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">${escapeHTML(workshop.grade)}º Ano</span><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">${escapeHTML(Number(workshop.grade) <= 5 ? 'EF I' : 'EF II')}</span></div>
+            <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${completed ? 'bg-emerald-50 text-emerald-700' : diff < 0 ? 'bg-rose-50 text-rose-700' : diff <= lead ? 'bg-amber-50 text-amber-800' : 'bg-amber-50 text-amber-800'}">${escapeHTML(timing)}</span>
+          </div>
+          <h4 class="mt-2 truncate text-sm font-bold text-slate-900">Oficina de Robótica · ${escapeHTML(ROBOTICS_WORKSHOP_SLOTS[workshop.slot]?.label || 'Dois horários')}</h4>
+          <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500"><span><i data-lucide="user-round" class="mr-1 inline-block h-3 w-3 align-[-2px]"></i>${escapeHTML(teacher)}</span><span><i data-lucide="calendar-days" class="mr-1 inline-block h-3 w-3 align-[-2px]"></i>${formatDateBR(workshop.date)} às ${escapeHTML(workshop.startTime)}</span></p>
+          <p class="mt-2 min-h-8 rounded-lg bg-slate-50 px-2.5 py-2 text-[10px] leading-snug text-slate-600">${escapeHTML(workshop.notes || 'Oficina de robótica.')}</p>
+          <div class="mt-2 flex items-center justify-end gap-1.5 border-t border-slate-100 pt-2">
+            <button type="button" onclick="setWorkshopStatus('${workshop.id}', '${completed ? 'pending' : 'completed'}')" class="rounded-lg px-3 py-1.5 text-[10px] font-bold ${completed ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'}">${completed ? 'Reabrir' : 'Concluir Oficina'}</button>
+            <button type="button" onclick="editWorkshop('${workshop.id}')" aria-label="Editar lembrete da oficina" class="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"><i data-lucide="pencil" class="h-3.5 w-3.5"></i></button>
+            <button type="button" onclick="confirmDeleteWorkshop('${workshop.id}')" aria-label="Excluir lembrete da oficina" class="rounded-lg border border-transparent p-1.5 text-rose-500 hover:bg-rose-50"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>
           </div>
         </article>`;
       }).join('');
