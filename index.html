@@ -49,9 +49,6 @@
     html {
       scroll-behavior: smooth;
     }
-    img[src*="icons/icon-"] {
-      filter: hue-rotate(275deg);
-    }
     @keyframes pulse-border {
       0%, 100% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
       50% { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
@@ -184,7 +181,7 @@
     <div class="login-layout grid w-full lg:grid-cols-2">
       <aside class="login-intro hidden flex-col justify-between p-8 text-white lg:flex xl:p-10">
         <div class="flex items-center gap-3">
-          <div class="rounded-2xl border border-white/20 bg-white/15 p-2.5 shadow-sm"><img src="icons/icon-192.png" alt="" class="h-9 w-9 rounded-lg object-contain" /></div>
+          <img src="icons/icon-192.png" alt="" class="h-14 w-14 shrink-0 object-contain" />
           <div><h1 class="font-extrabold tracking-tight">LembretesEduTec</h1><p class="text-xs text-emerald-50">Tecnologia Educacional & Robótica</p></div>
         </div>
         <div class="login-intro-copy max-w-xl py-12">
@@ -248,7 +245,7 @@
   <div id="app-shell" class="hidden app-layout min-h-screen">
   <aside id="app-sidebar" class="flex flex-col border-r border-slate-200 bg-white">
     <div class="sidebar-brand flex h-[68px] items-center gap-3 border-b border-slate-100 px-5">
-      <div class="rounded-xl bg-emerald-600 p-2"><i data-lucide="laptop-minimal-check" class="h-5 w-5 text-white"></i></div>
+      <img src="icons/icon-192.png" alt="" class="h-9 w-9 shrink-0 rounded-xl object-contain" />
       <div><p class="font-extrabold tracking-tight text-slate-900">LembretesEduTec</p><p class="text-[11px] text-slate-500">Painel Escolar</p></div>
     </div>
     <p class="sidebar-section-label px-4 pb-2 pt-6 text-[10px] font-bold uppercase tracking-widest text-slate-400">Módulos</p>
@@ -288,7 +285,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3">
         <!-- Logo e Título -->
         <div class="topbar-brand flex items-center gap-3">
-          <img src="icons/icon-192.png" alt="" class="topbar-mobile-mark hidden h-8 w-8 shrink-0 rounded-lg object-contain" />
+          <img src="icons/icon-192.png" alt="" class="topbar-mobile-mark hidden h-10 w-10 shrink-0 object-contain" />
           <div>
             <h1 id="app-page-title" class="text-lg sm:text-xl font-bold tracking-tight leading-tight">Agendamento de Equipamentos</h1>
             <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
@@ -1920,7 +1917,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
 
     function setWorkshopStatus(id, status) {
       const workshop = (settings.workshops || []).find(item => item.id === id);
-      if (!workshop || !['pending', 'completed'].includes(status)) return;
+      if (!workshop || !['pending', 'started', 'completed'].includes(status)) return;
       workshop.status = status;
       if (status === 'pending') {
         delete settings.notifiedEvents[`${id}_workshop_upcoming`];
@@ -1928,7 +1925,8 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       }
       saveState();
       renderWorkshops();
-      showToast(status === 'completed' ? 'Oficina marcada como concluída.' : 'Lembrete da oficina reaberto.', 'success');
+      const messages = { pending: 'Oficina reaberta.', started: 'Oficina iniciada.', completed: 'Oficina concluída.' };
+      showToast(messages[status], 'success');
     }
 
     function confirmDeleteWorkshop(id) {
@@ -2201,23 +2199,25 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       document.getElementById('workshop-count').textContent = items.length;
       document.getElementById('workshops-empty').classList.toggle('hidden', items.length > 0);
       list.innerHTML = items.map(workshop => {
+        const started = workshop.status === 'started';
         const completed = workshop.status === 'completed';
         const start = parseDateTime(workshop.date, workshop.startTime);
         const diff = start.getTime() - Date.now();
         const lead = Number(settings.leadTimeMinutes || 15) * 60000;
-        const timing = completed ? 'Concluída' : diff < 0 ? `Atrasada há ${formatMinutesDiff(diff)}` : diff <= lead ? `Começa em ${formatMinutesDiff(diff)}` : 'Agendada';
+        const timing = completed ? 'Concluída' : started ? 'Iniciada' : diff < 0 ? `Atrasada há ${formatMinutesDiff(diff)}` : diff <= lead ? `Começa em ${formatMinutesDiff(diff)}` : 'Agendada';
         const timingClass = completed ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : diff < 0 ? 'bg-rose-50 text-rose-700 border-rose-200' : diff <= lead ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200';
         const teacher = ROBOTICS_GRADE_TEACHERS[Number(workshop.grade)] || workshop.teacher;
         return `<article class="rounded-2xl border ${completed ? 'border-slate-200 opacity-75' : 'border-slate-200'} bg-white p-3.5 sm:p-4 shadow-sm">
           <div class="flex items-center justify-between gap-2">
             <div class="flex min-w-0 flex-wrap items-center gap-1.5"><span class="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">${escapeHTML(workshop.grade)}º Ano</span><span class="rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">${escapeHTML(Number(workshop.grade) <= 5 ? 'EF I' : 'EF II')}</span></div>
-            <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${completed ? 'bg-emerald-50 text-emerald-700' : diff < 0 ? 'bg-rose-50 text-rose-700' : diff <= lead ? 'bg-amber-50 text-amber-800' : 'bg-amber-50 text-amber-800'}">${escapeHTML(timing)}</span>
+            <span class="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${completed || started ? 'bg-emerald-50 text-emerald-700' : diff < 0 ? 'bg-rose-50 text-rose-700' : diff <= lead ? 'bg-amber-50 text-amber-800' : 'bg-amber-50 text-amber-800'}">${escapeHTML(timing)}</span>
           </div>
           <h4 class="mt-2 truncate text-sm font-bold text-slate-900">Oficina de Robótica · ${escapeHTML(ROBOTICS_WORKSHOP_SLOTS[workshop.slot]?.label || 'Dois horários')}</h4>
           <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500"><span><i data-lucide="user-round" class="mr-1 inline-block h-3 w-3 align-[-2px]"></i>${escapeHTML(teacher)}</span><span><i data-lucide="calendar-days" class="mr-1 inline-block h-3 w-3 align-[-2px]"></i>${formatDateBR(workshop.date)} às ${escapeHTML(workshop.startTime)}</span></p>
           <p class="mt-2 min-h-8 rounded-lg bg-slate-50 px-2.5 py-2 text-[10px] leading-snug text-slate-600">${escapeHTML(workshop.notes || 'Oficina de robótica.')}</p>
           <div class="mt-2 flex items-center justify-end gap-1.5 border-t border-slate-100 pt-2">
-            <button type="button" onclick="setWorkshopStatus('${workshop.id}', '${completed ? 'pending' : 'completed'}')" class="rounded-lg px-3 py-1.5 text-[10px] font-bold ${completed ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'}">${completed ? 'Reabrir' : 'Concluir Oficina'}</button>
+            ${!started && !completed ? `<button type="button" onclick="setWorkshopStatus('${workshop.id}', 'started')" class="rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-50">Iniciada</button>` : ''}
+            <button type="button" onclick="setWorkshopStatus('${workshop.id}', '${completed ? 'pending' : 'completed'}')" class="rounded-lg px-3 py-1.5 text-[10px] font-bold ${completed ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'}">${completed ? 'Reabrir' : 'Concluida'}</button>
             <button type="button" onclick="editWorkshop('${workshop.id}')" aria-label="Editar lembrete da oficina" class="rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700"><i data-lucide="pencil" class="h-3.5 w-3.5"></i></button>
             <button type="button" onclick="confirmDeleteWorkshop('${workshop.id}')" aria-label="Excluir lembrete da oficina" class="rounded-lg border border-transparent p-1.5 text-rose-500 hover:bg-rose-50"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>
           </div>
