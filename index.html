@@ -931,6 +931,10 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       return [...new Set([...(settings.professorNames || []), ...(settings.professorSchedule || []).map(item => item.teacher), ...(bookings || []).map(item => item.teacher), ...(settings.workshops || []).map(item => item.teacher)].filter(Boolean))]
         .sort((a, b) => a.localeCompare(b, 'pt-BR'));
     }
+    function getManagedProfessorNames() {
+      return [...new Set([...(settings.professorNames || []), ...(settings.professorSchedule || []).map(item => item.teacher)].filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    }
     function getProfessorSlots() {
       const slots = new Map();
       (settings.professorSchedule || []).forEach(item => {
@@ -1382,7 +1386,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       const select = document.getElementById('schedule-teacher-select');
       if (!select) return;
       const previous = select.value;
-      const names = getProfessorNames();
+      const names = getManagedProfessorNames();
       select.innerHTML = names.map(name => '<option value="' + escapeHTML(name) + '">' + escapeHTML(name) + '</option>').join('') || '<option value="">Nenhum professor cadastrado</option>';
       if (names.includes(previous)) select.value = previous;
       else if (names.length) select.value = names[0];
@@ -1430,7 +1434,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       const input = document.getElementById('professor-new-name');
       const name = input.value.trim();
       if (!name) { input.focus(); return; }
-      if (getProfessorNames().some(existing => existing.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))) {
+      if (getManagedProfessorNames().some(existing => existing.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))) {
         showToast('Esse professor já está cadastrado.', 'info'); return;
       }
       settings.professorNames = [...(settings.professorNames || []), name];
@@ -1444,7 +1448,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
       const oldName = document.getElementById('schedule-teacher-select').value;
       const newName = document.getElementById('professor-rename').value.trim();
       if (!oldName || !newName) return;
-      if (getProfessorNames().some(name => name !== oldName && name.toLocaleLowerCase('pt-BR') === newName.toLocaleLowerCase('pt-BR'))) {
+      if (getManagedProfessorNames().some(name => name !== oldName && name.toLocaleLowerCase('pt-BR') === newName.toLocaleLowerCase('pt-BR'))) {
         showToast('Já existe um professor com esse nome.', 'info'); return;
       }
       settings.professorNames = (settings.professorNames || []).map(name => name === oldName ? newName : name);
