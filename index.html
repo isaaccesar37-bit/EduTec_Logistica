@@ -735,7 +735,7 @@
           </div>
           <div>
             <label for="setting-teachers" class="block text-xs font-semibold text-slate-700 mb-1">Professores</label>
-            <textarea id="setting-teachers" rows="3" oninput="updateSchoolData('teachers', this.value)" placeholder="Ex: Ana Beatriz Silva&#10;Carlos Eduardo Souza" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+            <textarea id="setting-teachers" rows="3" oninput="updateSchoolData('teachers', this.value)" onchange="linkProfessorScheduleNames(true); populateProfessorScheduleEditor()" placeholder="Ex: Ana Beatriz Silva&#10;Carlos Eduardo Souza" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
           </div>
           <div>
             <label for="setting-classes" class="block text-xs font-semibold text-slate-700 mb-1">Turmas</label>
@@ -934,6 +934,30 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
     function getManagedProfessorNames() {
       return [...new Set([...(settings.professorNames || []), ...(settings.professorSchedule || []).map(item => item.teacher)].filter(Boolean))]
         .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    }
+    function normalizeProfessorName(name) {
+      return String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+    function resolveProfessorFullName(name) {
+      const normalized = normalizeProfessorName(name);
+      if (!normalized) return name;
+      const fullNames = [...new Set((settings.teachers || []).map(value => String(value).trim()).filter(Boolean))];
+      const exact = fullNames.find(value => normalizeProfessorName(value) === normalized);
+      if (exact) return exact;
+      const matches = fullNames.filter(value => normalizeProfessorName(value).startsWith(normalized + ' '));
+      return matches.length === 1 ? matches[0] : name;
+    }
+    function linkProfessorScheduleNames(saveChanges = false) {
+      let changed = false;
+      const resolve = name => {
+        const fullName = resolveProfessorFullName(name);
+        if (fullName !== name) changed = true;
+        return fullName;
+      };
+      settings.professorNames = [...new Set((settings.professorNames || []).map(resolve))];
+      settings.professorSchedule = (settings.professorSchedule || []).map(item => ({ ...item, teacher: resolve(item.teacher) }));
+      if (changed && saveChanges) saveState();
+      return changed;
     }
     function getProfessorSlots() {
       const slots = new Map();
@@ -1382,6 +1406,7 @@ const PROFESSOR_SCHEDULE_ROWS = `0|07:00-07:50|24:0,10:1,22:2,11:3,13:4,19:5,16:
     }
 
     function populateProfessorScheduleEditor() {
+      linkProfessorScheduleNames(true);
       initializeProfessorScheduleEditor();
       const select = document.getElementById('schedule-teacher-select');
       if (!select) return;
