@@ -1,8 +1,7 @@
-const CACHE_NAME = 'lembretes-edutec-shell-v19';
+const CACHE_NAME = 'lembretes-edutec-shell-v23';
 const APP_SHELL = [
   './',
   './index.html',
-  './acompanhamento-oficinas.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'

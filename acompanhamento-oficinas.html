@@ -50,6 +50,18 @@
         .print-only {
             display: none;
         }
+        @media (max-width: 640px) {
+            header > div { padding-left: .75rem; padding-right: .75rem; }
+            header > div > div.h-16 { height: auto !important; min-height: 6.5rem; padding: .75rem 0; }
+            header nav.flex { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem; width: 100%; }
+            header nav .tab-btn { min-width: 0; min-height: 42px; justify-content: center; gap: .35rem; padding: .55rem .4rem; font-size: .72rem; line-height: 1.15; text-align: center; white-space: normal; }
+            header nav .tab-btn span { display: inline !important; }
+            main { min-width: 0; padding: .75rem !important; }
+            main input, main select, main textarea { font-size: 16px !important; }
+            .tag-chip { max-width: 100%; white-space: normal; text-align: left; line-height: 1.25; }
+            #view-report .flex.justify-between.items-end { align-items: flex-start; flex-wrap: wrap; gap: .75rem; }
+            #toast-container { left: .75rem; right: .75rem; bottom: .75rem; width: auto; max-width: none; }
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
@@ -1143,7 +1155,7 @@
 
         function renderClassTeacherOptions(selectedValue = document.getElementById('inp-class').value) {
             const select = document.getElementById('inp-class');
-            const names = [...new Set([...classTeacherData.map(entry => entry.className), ...records.map(record => record.className).filter(Boolean)])];
+            const names = [...new Set(classTeacherData.map(entry => entry.className))];
             select.innerHTML = '<option value="">' + (names.length ? 'Selecione uma turma cadastrada' : 'Cadastre uma turma na aba Dados') + '</option>' +
                 names.map(name => `<option value="${escapeHTML(name)}">${escapeHTML(name)}</option>`).join('');
             if (names.includes(selectedValue)) select.value = selectedValue;
@@ -1158,10 +1170,16 @@
             container.innerHTML = classTeacherData.map((entry, index) => `
                 <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <div><p class="font-semibold text-slate-800">${escapeHTML(entry.className)}</p><p class="text-xs text-slate-500">Professor(a): ${escapeHTML(entry.teacher)}</p></div>
-                    <button type="button" data-edit-class-teacher="${index}" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">Editar</button>
+                    <div class="flex gap-2">
+                        <button type="button" data-edit-class-teacher="${index}" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-700">Editar</button>
+                        <button type="button" data-delete-class-teacher="${index}" class="rounded-lg border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50">Excluir</button>
+                    </div>
                 </div>`).join('');
             container.querySelectorAll('[data-edit-class-teacher]').forEach(button => {
                 button.addEventListener('click', () => editClassTeacher(Number(button.dataset.editClassTeacher)));
+            });
+            container.querySelectorAll('[data-delete-class-teacher]').forEach(button => {
+                button.addEventListener('click', () => deleteClassTeacher(Number(button.dataset.deleteClassTeacher)));
             });
         }
 
@@ -1196,6 +1214,23 @@
             document.getElementById('class-teacher-save').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar alterações';
             document.getElementById('class-teacher-cancel').classList.remove('hidden');
             document.getElementById('data-class-name').focus();
+        }
+
+        function deleteClassTeacher(index) {
+            const entry = classTeacherData[index];
+            if (!entry || !confirm(`Excluir a turma "${entry.className}"? Os registros de oficinas já feitos serão mantidos.`)) return;
+            classTeacherData.splice(index, 1);
+            saveClassTeacherData();
+            renderClassTeacherOptions();
+            renderClassTeacherList();
+            if (document.getElementById('class-teacher-edit-index').value === String(index)) {
+                resetClassTeacherForm();
+            } else if (document.getElementById('class-teacher-edit-index').value !== '') {
+                const editIndex = Number(document.getElementById('class-teacher-edit-index').value);
+                if (editIndex > index) document.getElementById('class-teacher-edit-index').value = String(editIndex - 1);
+            }
+            handleClassInput();
+            showToast('Turma excluída. Os registros existentes foram mantidos.', 'info');
         }
 
         function resetClassTeacherForm() {
@@ -1315,8 +1350,15 @@
             ];
 
             records = [...samples, ...records];
+            samples.forEach(sample => {
+                if (!classTeacherData.some(entry => entry.className.toLocaleLowerCase('pt-BR') === sample.className.toLocaleLowerCase('pt-BR'))) {
+                    classTeacherData.push({ className: sample.className, teacher: sample.teacher });
+                }
+            });
+            saveClassTeacherData();
             saveRecordsToStorage();
             renderClassTeacherOptions();
+            renderClassTeacherList();
             updateBadgeCount();
             showToast('3 exemplos com temas oficiais adicionados! Confira na aba Relatório Núcleo.', 'success');
         }
